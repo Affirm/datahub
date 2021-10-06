@@ -13,7 +13,7 @@ enum FabricType {
   /**
    * Designates early-integration (staging) fabrics
    */
-  EI
+  STAGE
 
   /**
    * Designates production fabrics
