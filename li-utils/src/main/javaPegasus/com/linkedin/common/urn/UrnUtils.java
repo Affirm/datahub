@@ -17,7 +17,7 @@ public class UrnUtils {
      * Convert platform + dataset + origin into DatasetUrn
      * @param platformName String, e.g. hdfs, oracle
      * @param datasetName String, e.g. /jobs/xxx, ABOOK.ADDRESS
-     * @param origin PROD, CORP, EI, DEV
+     * @param origin PROD, CORP, STAGE, DEV
      * @return DatasetUrn
      */
     @Nonnull
@@ -28,7 +28,7 @@ public class UrnUtils {
 
     /**
      * Convert fabric String to FabricType
-     * @param fabric PROD, CORP, EI, DEV, LIT, PRIME
+     * @param fabric PROD, CORP, STAGE, DEV, LIT, PRIME
      * @return FabricType
      */
     @Nonnull
@@ -38,8 +38,8 @@ public class UrnUtils {
                 return FabricType.PROD;
             case "CORP":
                 return FabricType.CORP;
-            case "EI":
-                return FabricType.EI;
+            case "STAGE":
+                return FabricType.STAGE;
             case "DEV":
                 return FabricType.DEV;
             default:
