@@ -32,8 +32,8 @@ public class BuilderUtilsTest {
   @Test
   public void testGetDatasetNames() {
     DatasetUrnArray datasetUrns = new DatasetUrnArray();
-    datasetUrns.add(new DatasetUrn(new DataPlatformUrn("hdfs"), "testDataset1", FabricType.EI));
-    datasetUrns.add(new DatasetUrn(new DataPlatformUrn("hdfs"), "testDataset2", FabricType.EI));
+    datasetUrns.add(new DatasetUrn(new DataPlatformUrn("hdfs"), "testDataset1", FabricType.STAGE));
+    datasetUrns.add(new DatasetUrn(new DataPlatformUrn("hdfs"), "testDataset2", FabricType.STAGE));
     assertEquals(BuilderUtils.getDatasetNames(datasetUrns), Arrays.asList("testDataset1", "testDataset2"));
   }
 
