@@ -294,6 +294,8 @@ class SQLAlchemyConfig(StatefulIngestionConfigBase):
             profiling.allow_deny_patterns = values["profile_pattern"]
         return values
 
+    sampling_query_template: Optional[str] = "SELECT * FROM {} LIMIT 50"
+
     @abstractmethod
     def get_sql_alchemy_url(self):
         pass
@@ -1321,6 +1323,29 @@ class SQLAlchemySource(StatefulIngestionSourceBase):
         for wu in container_workunits:
             self.report.report_workunit(wu)
             yield wu
+
+    def sample(self, schema_name: str) -> dict:
+        res = {}
+        for inspector in self.get_inspectors():
+            query_res = inspector.engine.execute(
+                self.config.sampling_query_template.format(schema_name)
+            )
+            for r in query_res:
+                for col, val in r.items():
+                    if col not in res:
+                        res[col] = set()
+                    res[col].add(val)
+        return res
+
+    def _can_run_profiler(self) -> bool:
+        try:
+            from datahub.ingestion.source.ge_data_profiler import (  # noqa: F401
+                DatahubGEProfiler,
+            )
+
+            return True
+        except Exception:
+            return False
 
     def get_profiler_instance(self, inspector: Inspector) -> "DatahubGEProfiler":
         from datahub.ingestion.source.ge_data_profiler import DatahubGEProfiler
