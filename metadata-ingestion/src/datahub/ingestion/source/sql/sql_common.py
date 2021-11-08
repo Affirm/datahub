@@ -29,7 +29,8 @@ from datahub.emitter.mce_builder import (
     make_dataset_urn,
 )
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
-from datahub.ingestion.api.common import PipelineContext
+from datahub.ingestion.api.common import PipelineContext, RecordEnvelope
+from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.ingestion.source.state.checkpoint import Checkpoint
@@ -62,7 +63,11 @@ from datahub.metadata.com.linkedin.pegasus2avro.schema import (
     StringTypeClass,
     TimeTypeClass,
 )
-from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass
+from datahub.metadata.schema_classes import (
+    ChangeTypeClass,
+    DatasetPropertiesClass,
+    MetadataChangeEventClass,
+)
 from datahub.utilities.sqlalchemy_query_combiner import SQLAlchemyQueryCombinerReport
 
 if TYPE_CHECKING:
@@ -192,7 +197,6 @@ class SQLAlchemyConfig(StatefulIngestionConfigBase):
     table_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
     view_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
     profile_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
-
     include_views: Optional[bool] = True
     include_tables: Optional[bool] = True
 
@@ -210,6 +214,8 @@ class SQLAlchemyConfig(StatefulIngestionConfigBase):
         if profiling is not None and profiling.enabled:
             profiling.allow_deny_patterns = values["profile_pattern"]
         return values
+
+    sampling_query_template: Optional[str] = "SELECT * FROM {} LIMIT 50"
 
     @abstractmethod
     def get_sql_alchemy_url(self):
@@ -344,7 +350,7 @@ def get_schema_metadata(
     return schema_metadata
 
 
-class SQLAlchemySource(StatefulIngestionSourceBase):
+class SQLAlchemySource(SampleableSource):
     """A Base class for all SQL Sources that use SQLAlchemy to extend"""
 
     def __init__(self, config: SQLAlchemyConfig, ctx: PipelineContext, platform: str):
@@ -796,6 +802,32 @@ class SQLAlchemySource(StatefulIngestionSourceBase):
             self.report.report_workunit(wu)
             yield wu
 
+<<<<<<< HEAD
+=======
+    def sample(self, schema_name: str) -> dict:
+        res = {}
+        for inspector in self.get_inspectors():
+            query_res = inspector.engine.execute(
+                self.config.sampling_query_template.format(schema_name)
+            )
+            for r in query_res:
+                for col, val in r.items():
+                    if col not in res:
+                        res[col] = set()
+                    res[col].add(val)
+        return res
+
+    def _can_run_profiler(self) -> bool:
+        try:
+            from datahub.ingestion.source.ge_data_profiler import (  # noqa: F401
+                DatahubGEProfiler,
+            )
+
+            return True
+        except Exception:
+            return False
+
+>>>>>>> a39ed0107 (Initial classifier impl)
     def _get_profiler_instance(self, inspector: Inspector) -> "DatahubGEProfiler":
         from datahub.ingestion.source.ge_data_profiler import DatahubGEProfiler
 
