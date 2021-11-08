@@ -140,10 +140,12 @@ def init() -> None:
 
 
 datahub.add_command(check)
-datahub.add_command(docker)
-datahub.add_command(ingest)
+datahub.add_command(classify)
 datahub.add_command(delete)
+datahub.add_command(docker)
+datahub.add_command(generate_report)
 datahub.add_command(get)
+datahub.add_command(ingest)
 datahub.add_command(put)
 datahub.add_command(state)
 datahub.add_command(telemetry_cli)
