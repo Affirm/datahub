@@ -45,6 +45,12 @@ framework_common = {
     "tabulate",
 }
 
+classify = {
+  "pandas",
+  "spacy",
+  "requests"
+}
+
 kafka_common = {
     # We currently require both Avro libraries. The codegen uses avro-python3 (above)
     # schema parsers at runtime for generating and reading JSON into Python objects.
@@ -84,6 +90,7 @@ plugins: Dict[str, Set[str]] = {
     "azure-ad": set(),
     "bigquery": sql_common | {"pybigquery >= 0.6.0"},
     "bigquery-usage": {"google-cloud-logging", "cachetools"},
+    "classify": classify,
     "datahub-business-glossary": set(),
     "dbt": set(),
     "druid": sql_common | {"pydruid>=0.6.2"},

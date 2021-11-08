@@ -28,8 +28,9 @@ from datahub.configuration.common import (
 )
 from datahub.emitter.mce_builder import DEFAULT_ENV
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
-from datahub.ingestion.api.common import PipelineContext
-from datahub.ingestion.api.source import Source, SourceReport
+from datahub.ingestion.api.common import PipelineContext, RecordEnvelope
+from datahub.ingestion.api.sampleable_source import SampleableSource
+from datahub.ingestion.api.source import SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.com.linkedin.pegasus2avro.metadata.snapshot import DatasetSnapshot
 from datahub.metadata.com.linkedin.pegasus2avro.mxe import MetadataChangeEvent
@@ -50,7 +51,7 @@ from datahub.metadata.com.linkedin.pegasus2avro.schema import (
     StringTypeClass,
     TimeTypeClass,
 )
-from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass
+from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass, MetadataChangeEventClass
 
 if TYPE_CHECKING:
     from datahub.ingestion.source.ge_data_profiler import DatahubGEProfiler
@@ -280,8 +281,10 @@ def get_schema_metadata(
     return schema_metadata
 
 
-class SQLAlchemySource(Source):
+class SQLAlchemySource(SampleableSource):
     """A Base class for all SQL Sources that use SQLAlchemy to extend"""
+
+    SAMPLE_SIZE: int = 50
 
     def __init__(self, config: SQLAlchemyConfig, ctx: PipelineContext, platform: str):
         super().__init__(ctx)
@@ -528,6 +531,17 @@ class SQLAlchemySource(Source):
             wu = SqlWorkUnit(id=dataset_name, mce=mce)
             self.report.report_workunit(wu)
             yield wu
+
+    def sample(self, schema_name: str) -> dict:
+        res = {}
+        for inspector in self.get_inspectors():
+            query_res = inspector.engine.execute("SELECT * FROM " + schema_name + " LIMIT " + self.SAMPLE_SIZE)
+            for r in query_res:
+                for col, val in r.items():
+                    if col not in res:
+                        res[col] = set()
+                    res[col].add(val)
+        return res
 
     def _can_run_profiler(self) -> bool:
         try:

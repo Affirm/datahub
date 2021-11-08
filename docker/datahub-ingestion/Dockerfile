@@ -29,7 +29,9 @@ COPY --from=prod-build /datahub-src /datahub-src
 FROM base as prod-install
 COPY --from=prod-codegen /datahub-src/metadata-ingestion /datahub-ingestion
 RUN cd /datahub-ingestion && \
-    pip install ".[all]"
+    pip install ".[all]" && python -m spacy download en_core_web_sm
+
+COPY privacy_type_mapping.csv /data/privacy_type_mapping.csv
 
 FROM base as dev-install
 # Dummy stage for development. Assumes code is built on your machine and mounted to this image.
