@@ -57,6 +57,12 @@ framework_common = {
     "types-Deprecated",
 }
 
+classify = {
+  "pandas",
+  "spacy",
+  "requests"
+}
+
 kafka_common = {
     # We currently require both Avro libraries. The codegen uses avro-python3 (above)
     # schema parsers at runtime for generating and reading JSON into Python objects.
@@ -155,6 +161,7 @@ plugins: Dict[str, Set[str]] = {
     | bigquery_common
     | {"sqlalchemy-bigquery>=1.4.1", "sqllineage==1.3.4", "sqlparse"},
     "bigquery-usage": bigquery_common | usage_common | {"cachetools"},
+    "classify": classify,
     "clickhouse": sql_common | {"clickhouse-sqlalchemy==0.1.8"},
     "clickhouse-usage": sql_common
     | usage_common

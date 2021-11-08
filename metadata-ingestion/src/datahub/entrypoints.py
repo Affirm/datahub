@@ -8,9 +8,11 @@ import stackprinter
 
 import datahub as datahub_package
 from datahub.cli.check_cli import check
+from datahub.cli.classify_cli import classify
 from datahub.cli.cli_utils import DATAHUB_CONFIG_PATH, write_datahub_config
 from datahub.cli.delete_cli import delete
 from datahub.cli.docker import docker
+from datahub.cli.generate_report_cli import generate_report
 from datahub.cli.get_cli import get
 from datahub.cli.ingest_cli import ingest
 from datahub.cli.migrate import migrate
@@ -122,10 +124,12 @@ def init() -> None:
 
 
 datahub.add_command(check)
-datahub.add_command(docker)
-datahub.add_command(ingest)
+datahub.add_command(classify)
 datahub.add_command(delete)
+datahub.add_command(docker)
+datahub.add_command(generate_report)
 datahub.add_command(get)
+datahub.add_command(ingest)
 datahub.add_command(put)
 datahub.add_command(telemetry_cli)
 datahub.add_command(migrate)
