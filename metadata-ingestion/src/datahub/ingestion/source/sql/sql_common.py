@@ -28,8 +28,9 @@ from datahub.configuration.common import (
 )
 from datahub.emitter.mce_builder import DEFAULT_ENV
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
-from datahub.ingestion.api.common import PipelineContext
-from datahub.ingestion.api.source import Source, SourceReport
+from datahub.ingestion.api.common import PipelineContext, RecordEnvelope
+from datahub.ingestion.api.sampleable_source import SampleableSource
+from datahub.ingestion.api.source import SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.com.linkedin.pegasus2avro.metadata.snapshot import DatasetSnapshot
 from datahub.metadata.com.linkedin.pegasus2avro.mxe import MetadataChangeEvent
@@ -49,7 +50,11 @@ from datahub.metadata.com.linkedin.pegasus2avro.schema import (
     StringTypeClass,
     TimeTypeClass,
 )
-from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass
+from datahub.metadata.schema_classes import (
+    ChangeTypeClass,
+    DatasetPropertiesClass,
+    MetadataChangeEventClass,
+)
 
 if TYPE_CHECKING:
     from datahub.ingestion.source.ge_data_profiler import DatahubGEProfiler
@@ -123,11 +128,12 @@ class SQLAlchemyConfig(ConfigModel):
     table_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
     view_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
     profile_pattern: AllowDenyPattern = AllowDenyPattern.allow_all()
-
     include_views: Optional[bool] = True
     include_tables: Optional[bool] = True
 
     profiling: GEProfilingConfig = GEProfilingConfig()
+
+    sampling_query_template: Optional[str] = "SELECT * FROM {} LIMIT 50"
 
     @abstractmethod
     def get_sql_alchemy_url(self):
@@ -264,7 +270,7 @@ def get_schema_metadata(
     return schema_metadata
 
 
-class SQLAlchemySource(Source):
+class SQLAlchemySource(SampleableSource):
     """A Base class for all SQL Sources that use SQLAlchemy to extend"""
 
     def __init__(self, config: SQLAlchemyConfig, ctx: PipelineContext, platform: str):
@@ -473,6 +479,19 @@ class SQLAlchemySource(Source):
             wu = SqlWorkUnit(id=dataset_name, mce=mce)
             self.report.report_workunit(wu)
             yield wu
+
+    def sample(self, schema_name: str) -> dict:
+        res = {}
+        for inspector in self.get_inspectors():
+            query_res = inspector.engine.execute(
+                self.config.sampling_query_template.format(schema_name)
+            )
+            for r in query_res:
+                for col, val in r.items():
+                    if col not in res:
+                        res[col] = set()
+                    res[col].add(val)
+        return res
 
     def _can_run_profiler(self) -> bool:
         try:
