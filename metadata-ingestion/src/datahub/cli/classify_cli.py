@@ -11,6 +11,12 @@ from pydantic import ValidationError
 import datahub as datahub_package
 from datahub.classification.classifier_pipeline import ClassifierPipeline
 from datahub.configuration.config_loader import load_config_file
+from datahub.utilities.metrics import (
+    CloudWatchDatahubCustomMetricReporter,
+    DatahubCustomEnvironment,
+    DatahubCustomMetricReporter,
+    DatahubCustomNamespace,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +44,20 @@ def run(config: str) -> None:
 
     pipeline_config.update(
         {
-            "ddb_client": boto3.client("dynamodb"),
-            "kms_client": boto3.client("kms"),
             "num_shards": os.environ["NUM_SHARDS"].split("-")[1],
             "shard_id": os.environ["SHARD_ID"].split("-")[1],
         }
     )
 
+    reporter: DatahubCustomMetricReporter = CloudWatchDatahubCustomMetricReporter(
+        boto3.client("cloudwatch"),
+        DatahubCustomEnvironment[pipeline_config["source"]["type"].upper()],
+        DatahubCustomNamespace.DATAHUB_PII_CLASSIFICATION,
+    )
     try:
-        pipeline = ClassifierPipeline.create(pipeline_config)
+        pipeline = ClassifierPipeline.create(
+            pipeline_config, boto3.client("dynamodb"), boto3.client("kms"), reporter
+        )
     except ValidationError as e:
         click.echo(e, err=True)
         sys.exit(1)

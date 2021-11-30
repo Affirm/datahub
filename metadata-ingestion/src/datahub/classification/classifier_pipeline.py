@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import logging
 import uuid
+from timeit import default_timer as timer
 from typing import Any, Dict, Iterable, List, Optional
 
 import click
@@ -18,6 +19,7 @@ from datahub.ingestion.extractor.extractor_registry import extractor_registry
 from datahub.ingestion.source.source_registry import source_registry
 from datahub.ingestion.transformer.transform_registry import transform_registry
 from datahub.metadata.schema_classes import SchemaMetadataClass
+from datahub.utilities.metrics import DatahubCustomMetric, DatahubCustomMetricReporter
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +32,6 @@ class ClassifierPipelineConfig(ConfigModel):
     datahub_base_url: str
     datahub_username: str
     datahub_encrypted_password: str
-    ddb_client: Any  # Type hints not available for boto3 clients
-    kms_client: Any  # Type hints not available for boto3 clients
     num_shards: int
     pii_classification_state_table_name: str
     shard_id: int
@@ -54,7 +54,17 @@ class ClassifierPipeline:
     source: SampleableSource
     transformers: List[Transformer]
 
-    def __init__(self, config: ClassifierPipelineConfig):
+    ddb_client: Any
+    kms_client: Any
+    metric_reporter: DatahubCustomMetricReporter
+
+    def __init__(
+        self,
+        config: ClassifierPipelineConfig,
+        ddb_client: Any,
+        kms_client: Any,
+        metric_reporter: DatahubCustomMetricReporter,
+    ):
         logger.info(f"Building classifier pipeline from config: {config}")
         self.config = config
         self.ctx = PipelineContext(run_id=str(uuid.uuid1()))
@@ -65,19 +75,22 @@ class ClassifierPipeline:
         )
         self.extractor_class = extractor_registry.get(self.config.source.extractor)
 
-        self.ddb_client = config.ddb_client
-        self.kms_client = config.kms_client
         self.classifier = Classifier(self.source)
         self.pii_classification_state_table_name = (
             config.pii_classification_state_table_name
         )
         self.datahub_base_url = config.datahub_base_url
-        self.datahub_cookies = self._login_to_datahub(
-            config.datahub_username, config.datahub_encrypted_password
-        )
         self.my_shard_id = config.shard_id
         self.num_shards = config.num_shards
         assert self.my_shard_id >= 0 and self.my_shard_id < self.num_shards
+
+        self.ddb_client = ddb_client
+        self.kms_client = kms_client
+        self.metric_reporter = metric_reporter
+
+        self.datahub_cookies = self._login_to_datahub(
+            config.datahub_username, config.datahub_encrypted_password
+        )
 
         self._configure_transforms()
 
@@ -89,7 +102,7 @@ class ClassifierPipeline:
         )
         password = kms_result["Plaintext"].decode("UTF-8")
 
-        url = "{}{}".format(self.datahub_base_url, self.DATAHUB_LOGIN_ENDPOINT)
+        url = f"{self.datahub_base_url}{self.DATAHUB_LOGIN_ENDPOINT}"
         creds = {"username": username, "password": password}
 
         return requests.post(url, json=creds).cookies.get_dict()
@@ -141,15 +154,18 @@ class ClassifierPipeline:
         now = datetime.datetime.now()
 
         are_writes_successful = True
+        result_has_pii = False
         for col_name, class_result in classification_result.items():
             for law in class_result.privacy_laws:
                 are_writes_successful &= self._attach_glossary_terms(
-                    urn, col_name, "PrivacyLaw.{}".format(law)
+                    urn, col_name, f"PrivacyLaw.{law}"
                 )
+                result_has_pii |= True
             for type in class_result.pii_types:
                 are_writes_successful &= self._attach_glossary_terms(
-                    urn, col_name, "PiiData.{}".format(type)
+                    urn, col_name, f"PiiData.{type}"
                 )
+                result_has_pii |= True
 
         if are_writes_successful:
             if is_first_time_classified:
@@ -162,6 +178,14 @@ class ClassifierPipeline:
                         "lastEvalDate": {"S": now.isoformat()},
                     },
                 )
+
+                self.metric_reporter.increment(
+                    DatahubCustomMetric.NEW_DATASET_CLASSIFIED
+                )
+                if result_has_pii:
+                    self.metric_reporter.increment(
+                        DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII
+                    )
             else:
                 self.ddb_client.update_item(
                     TableName=self.pii_classification_state_table_name,
@@ -169,20 +193,30 @@ class ClassifierPipeline:
                     UpdateExpression="SET lastEvalDate = :newEvalDate",
                     ExpressionAttributeValues={":newEvalDate": {"S": now.isoformat()}},
                 )
+
+                self.metric_reporter.increment(
+                    DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED
+                )
+                if result_has_pii:
+                    self.metric_reporter.increment(
+                        DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED_AS_PII
+                    )
         else:
-            logger.warning(f"Not all writes successful for urn {urn}, skipping state table update")
+            logger.warning(
+                f"Not all writes successful for urn {urn}, skipping state table update"
+            )
 
     def _attach_glossary_terms(
         self, urn: str, subfield: str, glossary_term: str
     ) -> bool:
 
-        url = "{}{}".format(self.datahub_base_url, self.DATAHUB_GRAPHQL_ENDPOINT)
+        url = f"{self.datahub_base_url}{self.DATAHUB_GRAPHQL_ENDPOINT}"
 
         req = {
             "operationName": "addTerm",
             "variables": {
                 "input": {
-                    "termUrn": "urn:li:glossaryTerm:{}".format(glossary_term),
+                    "termUrn": f"urn:li:glossaryTerm:{glossary_term}",
                     "resourceUrn": urn,
                     "subResource": subfield,
                     "subResourceType": "DATASET_FIELD",
@@ -197,26 +231,40 @@ class ClassifierPipeline:
 
         if success:
             logger.info(
-                "Attached term {} to {} on field {} with code {}".format(
-                    glossary_term, urn, subfield, str(r.status_code)
-                )
+                f"Attached term {glossary_term} to {urn} on field {subfield} with code {str(r.status_code)}"
             )
         else:
             logger.error(
-                "Failed to attach term {} to {} on field {} with code {}".format(
-                    glossary_term, urn, subfield, str(r.status_code)
-                )
+                f"Failed to attach term {glossary_term} to {urn} on field {subfield} with code {str(r.status_code)}"
             )
 
         return success
 
+    def _zero_metrics(self) -> None:
+        self.metric_reporter.zero(DatahubCustomMetric.NEW_DATASET_CLASSIFIED)
+        self.metric_reporter.zero(DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII)
+        self.metric_reporter.zero(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED)
+        self.metric_reporter.zero(
+            DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED_AS_PII
+        )
+        self.metric_reporter.zero(DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED)
+        self.metric_reporter.zero(DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED)
+
     @classmethod
-    def create(cls, config_dict: dict) -> "ClassifierPipeline":
+    def create(
+        cls,
+        config_dict: dict,
+        ddb_client: Any,
+        kms_client: Any,
+        metric_reporter: DatahubCustomMetricReporter,
+    ) -> "ClassifierPipeline":
         config = ClassifierPipelineConfig.parse_obj(config_dict)
-        return cls(config)
+        return cls(config, ddb_client, kms_client, metric_reporter)
 
     def run(self) -> None:
         extractor: Extractor = self.extractor_class()
+        self._zero_metrics()
+        start_overall_time_seconds = timer()
         for wu in self.source.get_workunits():
             extractor.configure({}, self.ctx)
 
@@ -237,18 +285,50 @@ class ClassifierPipeline:
                     )
                     < datetime.datetime.now()
                 )
-                if does_record_belong_to_shard and is_ttl_expired:
-                    try:
-                        classification_res = self.classifier.classify(schema_name, urn)
-                        self._write_classification_result(
-                            urn, classification_res, record is None
-                        )
-                    except:
-                        logger.exception(
-                            "Classification pipeline failed for {}".format(schema_name)
+                if does_record_belong_to_shard:
+                    if is_ttl_expired:
+                        try:
+                            logger.info(
+                                f"Shard {self.my_shard_id} attempting to classify urn {urn}"
+                            )
+                            start_single_time_seconds = timer()
+                            classification_res = self.classifier.classify(
+                                schema_name, urn
+                            )
+                            self._write_classification_result(
+                                urn, classification_res, record is None
+                            )
+                            single_classify_time_millis = (
+                                timer() - start_single_time_seconds
+                            ) * 1000
+                            self.metric_reporter.duration_millis(
+                                DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME,
+                                single_classify_time_millis,
+                            )
+                            logger.info(
+                                f"Classify for urn {urn} took {single_classify_time_millis}"
+                            )
+                        except:
+                            logger.exception(
+                                f"Classification pipeline failed for {urn}"
+                            )
+                            self.metric_reporter.increment(
+                                DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED
+                            )
+                    else:
+                        self.metric_reporter.increment(
+                            DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED
                         )
 
             extractor.close()
+        overall_classify_time_millis = (timer() - start_overall_time_seconds) * 1000
+        self.metric_reporter.duration_millis(
+            DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME,
+            overall_classify_time_millis,
+        )
+        logger.info(
+            f"Overall classify for shard {self.my_shard_id} took {overall_classify_time_millis} milliseconds"
+        )
         self.source.close()
 
     def transform(self, records: Iterable[RecordEnvelope]) -> Iterable[RecordEnvelope]:

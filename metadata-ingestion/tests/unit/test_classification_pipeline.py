@@ -1,10 +1,11 @@
 import datetime
 import os
-import unittest
 from typing import Iterable, List, cast
-from unittest.mock import MagicMock, Mock, patch
+from unittest import TestCase
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 import boto3
+import pytest
 import requests
 from botocore.stub import Stubber
 
@@ -22,19 +23,35 @@ from datahub.metadata.schema_classes import (
     MetadataChangeEventClass,
     SchemaMetadataClass,
 )
+from datahub.utilities.metrics import (
+    CloudWatchDatahubCustomMetricReporter,
+    DatahubCustomEnvironment,
+    DatahubCustomMetric,
+    DatahubCustomMetricReporter,
+    DatahubCustomNamespace,
+)
 from tests.test_helpers.sink_helpers import RecordingSinkReport
 
-class ClassifierPipelineTest(unittest.TestCase):
+
+class ClassifierPipelineTest(TestCase):
     def setUp(self):
         self.ddb_client = boto3.client("dynamodb")
         self.kms_client = boto3.client("kms")
+        self.metric_reporter: DatahubCustomMetricReporter = (
+            CloudWatchDatahubCustomMetricReporter(
+                Mock(),
+                DatahubCustomEnvironment.MYSQL,
+                DatahubCustomNamespace.DATAHUB_PII_CLASSIFICATION,
+            )
+        )
+        self.metric_reporter.zero = MagicMock()
+        self.metric_reporter.increment = MagicMock()
+        self.metric_reporter.duration_millis = MagicMock()
 
         self.default_pipeline_config = {
             "datahub_base_url": "http://localhost:1234",
             "datahub_username": "dummyUser",
             "datahub_encrypted_password": "YWJjZGVm",
-            "ddb_client": self.ddb_client,
-            "kms_client": self.kms_client,
             "num_shards": 1,
             "pii_classification_state_table_name": "DummyPiiTable",
             "shard_id": 0,
@@ -76,6 +93,34 @@ class ClassifierPipelineTest(unittest.TestCase):
         fake_responses[3].text = self.success_attach_term_response
         self.default_fake_responses = fake_responses
 
+    def _assert_metric_reporter_zeroed(self):
+        expected_calls = [
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII),
+            call(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED_AS_PII),
+            call(DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED),
+            call(DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED),
+        ]
+        self.metric_reporter.zero.assert_has_calls(expected_calls, any_order=True)
+        self.assertEqual(len(expected_calls), self.metric_reporter.zero.call_count)
+
+    def _assert_metric_calls(self, increment_expected_calls, duration_expected_calls):
+        self._assert_metric_reporter_zeroed()
+        self.metric_reporter.increment.assert_has_calls(
+            increment_expected_calls, any_order=True
+        )
+        self.metric_reporter.duration_millis.assert_has_calls(
+            duration_expected_calls, any_order=True
+        )
+        self.assertEqual(
+            len(increment_expected_calls), self.metric_reporter.increment.call_count
+        )
+        self.assertEqual(
+            len(duration_expected_calls),
+            self.metric_reporter.duration_millis.call_count,
+        )
+
     @patch.object(requests, "post")
     def test_run_classifyNew_createsClassifications(self, post_mock):
         post_mock.side_effect = self.default_fake_responses
@@ -88,29 +133,85 @@ class ClassifierPipelineTest(unittest.TestCase):
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(self.default_pipeline_config).run()
+        ClassifierPipeline.create(
+            self.default_pipeline_config,
+            self.ddb_client,
+            self.kms_client,
+            self.metric_reporter,
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII),
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME, ANY),
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY),
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyMultipleNew_createsClassifications(self, post_mock):
-        post_mock.side_effect = self.default_fake_responses
+        fake_responses = [
+            Mock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+        ]
+        # 0 is login response request/response
+        fake_responses[0] = self.default_fake_responses[0]
+        fake_responses[1].text = self.success_attach_term_response
+        fake_responses[2].text = self.success_attach_term_response
+        fake_responses[3].text = self.success_attach_term_response
+        fake_responses[4].text = self.success_attach_term_response
+        fake_responses[5].text = self.success_attach_term_response
+        fake_responses[6].text = self.success_attach_term_response
+        post_mock.side_effect = fake_responses
 
         multi_source_config = self.default_pipeline_config.copy()
         multi_source_config["source"] = {
-            "type": "tests.unit.test_classification_pipeline.FakeMultiSourceWithPii"
+            "type": "tests.unit.test_classification_pipeline.FakeMultiSourceWithPii",
+            "config": {
+                "sampling_query_template": "SELECT * from {} LIMIT 5",
+            },
         }
 
         sd = Stubber(self.ddb_client)
         sk = Stubber(self.kms_client)
         sd.add_response("query", {"Items": []})
         sd.add_response("put_item", {})
+        sd.add_response("query", {"Items": []})
+        sd.add_response("put_item", {})
         sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(multi_source_config).run()
+        ClassifierPipeline.create(
+            multi_source_config, self.ddb_client, self.kms_client, self.metric_reporter
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII),
+            call(DatahubCustomMetric.NEW_DATASET_CLASSIFIED_AS_PII),
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME, ANY),
+            call(DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME, ANY),
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY),
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
@@ -139,7 +240,24 @@ class ClassifierPipelineTest(unittest.TestCase):
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(self.default_pipeline_config).run()
+        ClassifierPipeline.create(
+            self.default_pipeline_config,
+            self.ddb_client,
+            self.kms_client,
+            self.metric_reporter,
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED),
+            call(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED_AS_PII),
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME, ANY),
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY),
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
@@ -167,7 +285,22 @@ class ClassifierPipelineTest(unittest.TestCase):
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(self.default_pipeline_config).run()
+        ClassifierPipeline.create(
+            self.default_pipeline_config,
+            self.ddb_client,
+            self.kms_client,
+            self.metric_reporter,
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED)
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY)
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
@@ -191,7 +324,22 @@ class ClassifierPipelineTest(unittest.TestCase):
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(self.default_pipeline_config).run()
+        ClassifierPipeline.create(
+            self.default_pipeline_config,
+            self.ddb_client,
+            self.kms_client,
+            self.metric_reporter,
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED),
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY)
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
@@ -227,7 +375,23 @@ class ClassifierPipelineTest(unittest.TestCase):
         sd.activate()
         sk.activate()
 
-        ClassifierPipeline.create(no_pii_pipeline_config).run()
+        ClassifierPipeline.create(
+            no_pii_pipeline_config,
+            self.ddb_client,
+            self.kms_client,
+            self.metric_reporter,
+        ).run()
+
+        increment_expected_calls = [
+            call(DatahubCustomMetric.EXISTING_DATASET_CLASSIFIED)
+        ]
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME, ANY),
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY),
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
@@ -249,10 +413,21 @@ class ClassifierPipelineTest(unittest.TestCase):
         two_shards_config["shard_id"] = 1
         two_shards_config["num_shards"] = 2
 
-        ClassifierPipeline.create(two_shards_config).run()
+        ClassifierPipeline.create(
+            two_shards_config, self.ddb_client, self.kms_client, self.metric_reporter
+        ).run()
+
+        increment_expected_calls = []
+
+        duration_expected_calls = [
+            call(DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME, ANY)
+        ]
+
+        self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
         sk.assert_no_pending_responses()
+
 
 class AddStatusRemovedTransformer(Transformer):
     @classmethod
@@ -296,6 +471,7 @@ class FakeSingleSourceWithPii(SampleableSource):
     def close(self):
         pass
 
+
 class FakeMultiSourceWithPii(SampleableSource):
     def __init__(self):
         self.source_report = SourceReport()
@@ -306,7 +482,7 @@ class FakeMultiSourceWithPii(SampleableSource):
 
     @classmethod
     def create(cls, config_dict: dict, ctx: PipelineContext) -> "Source":
-        return FakeSingleSourceWithPii()
+        return FakeMultiSourceWithPii()
 
     @classmethod
     def sample(self, schema_name: str) -> dict:
