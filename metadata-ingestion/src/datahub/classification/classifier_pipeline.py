@@ -31,7 +31,7 @@ class SourceConfig(DynamicTypedConfig):
 class ClassifierPipelineConfig(ConfigModel):
     datahub_base_url: str
     datahub_username: str
-    datahub_encrypted_password: str
+    datahub_password: str
     num_shards: int
     pii_classification_state_table_name: str
     shard_id: int
@@ -55,14 +55,12 @@ class ClassifierPipeline:
     transformers: List[Transformer]
 
     ddb_client: Any
-    kms_client: Any
     metric_reporter: DatahubCustomMetricReporter
 
     def __init__(
         self,
         config: ClassifierPipelineConfig,
         ddb_client: Any,
-        kms_client: Any,
         metric_reporter: DatahubCustomMetricReporter,
     ):
         logger.info(f"Building classifier pipeline from config: {config}")
@@ -85,25 +83,19 @@ class ClassifierPipeline:
         assert self.my_shard_id >= 0 and self.my_shard_id < self.num_shards
 
         self.ddb_client = ddb_client
-        self.kms_client = kms_client
         self.metric_reporter = metric_reporter
 
         self.datahub_cookies = self._login_to_datahub(
-            config.datahub_username, config.datahub_encrypted_password
+            config.datahub_username, config.datahub_password
         )
 
         self._configure_transforms()
 
     def _login_to_datahub(
-        self, username: str, encrypted_password: str
+        self, username: str, datahub_password: str
     ) -> Dict[str, str]:
-        kms_result = self.kms_client.decrypt(
-            CiphertextBlob=bytes(base64.b64decode(encrypted_password))
-        )
-        password = kms_result["Plaintext"].decode("UTF-8")
-
         url = f"{self.datahub_base_url}{self.DATAHUB_LOGIN_ENDPOINT}"
-        creds = {"username": username, "password": password}
+        creds = {"username": username, "password": datahub_password}
 
         return requests.post(url, json=creds).cookies.get_dict()
 
@@ -255,11 +247,10 @@ class ClassifierPipeline:
         cls,
         config_dict: dict,
         ddb_client: Any,
-        kms_client: Any,
         metric_reporter: DatahubCustomMetricReporter,
     ) -> "ClassifierPipeline":
         config = ClassifierPipelineConfig.parse_obj(config_dict)
-        return cls(config, ddb_client, kms_client, metric_reporter)
+        return cls(config, ddb_client, metric_reporter)
 
     def run(self) -> None:
         extractor: Extractor = self.extractor_class()
