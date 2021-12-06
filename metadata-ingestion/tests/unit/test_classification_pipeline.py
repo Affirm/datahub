@@ -36,7 +36,6 @@ from tests.test_helpers.sink_helpers import RecordingSinkReport
 class ClassifierPipelineTest(TestCase):
     def setUp(self):
         self.ddb_client = boto3.client("dynamodb")
-        self.kms_client = boto3.client("kms")
         self.metric_reporter: DatahubCustomMetricReporter = (
             CloudWatchDatahubCustomMetricReporter(
                 Mock(),
@@ -51,7 +50,7 @@ class ClassifierPipelineTest(TestCase):
         self.default_pipeline_config = {
             "datahub_base_url": "http://localhost:1234",
             "datahub_username": "dummyUser",
-            "datahub_encrypted_password": "YWJjZGVm",
+            "datahub_password": "abc",
             "num_shards": 1,
             "pii_classification_state_table_name": "DummyPiiTable",
             "shard_id": 0,
@@ -126,17 +125,13 @@ class ClassifierPipelineTest(TestCase):
         post_mock.side_effect = self.default_fake_responses
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response("query", {"Items": []})
         sd.add_response("put_item", {})
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
             self.default_pipeline_config,
             self.ddb_client,
-            self.kms_client,
             self.metric_reporter,
         ).run()
 
@@ -153,7 +148,6 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyMultipleNew_createsClassifications(self, post_mock):
@@ -185,17 +179,14 @@ class ClassifierPipelineTest(TestCase):
         }
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response("query", {"Items": []})
         sd.add_response("put_item", {})
         sd.add_response("query", {"Items": []})
         sd.add_response("put_item", {})
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
-            multi_source_config, self.ddb_client, self.kms_client, self.metric_reporter
+            multi_source_config, self.ddb_client, self.metric_reporter
         ).run()
 
         increment_expected_calls = [
@@ -214,14 +205,12 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyExisting_updatesClassifications(self, post_mock):
         post_mock.side_effect = self.default_fake_responses
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response(
             "query",
             {
@@ -236,14 +225,11 @@ class ClassifierPipelineTest(TestCase):
             },
         )
         sd.add_response("update_item", {})
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
             self.default_pipeline_config,
             self.ddb_client,
-            self.kms_client,
             self.metric_reporter,
         ).run()
 
@@ -260,14 +246,12 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyExistingTtlNotExpired_doesNothing(self, post_mock):
         post_mock.side_effect = self.default_fake_responses
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response(
             "query",
             {
@@ -281,14 +265,11 @@ class ClassifierPipelineTest(TestCase):
                 ]
             },
         )
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
             self.default_pipeline_config,
             self.ddb_client,
-            self.kms_client,
             self.metric_reporter,
         ).run()
 
@@ -303,7 +284,6 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyNewAndNotAllRequestsSucceed_doesNotUpdateDynamoState(
@@ -318,16 +298,12 @@ class ClassifierPipelineTest(TestCase):
         post_mock.side_effect = fake_responses
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response("query", {"Items": []})
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
             self.default_pipeline_config,
             self.ddb_client,
-            self.kms_client,
             self.metric_reporter,
         ).run()
 
@@ -342,7 +318,6 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyExistingGivesNoResults_updatesDynamoState(self, post_mock):
@@ -356,7 +331,6 @@ class ClassifierPipelineTest(TestCase):
         post_mock.side_effect = fake_responses
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response(
             "query",
             {
@@ -370,15 +344,12 @@ class ClassifierPipelineTest(TestCase):
                 ]
             },
         )
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.add_response("update_item", {})
         sd.activate()
-        sk.activate()
 
         ClassifierPipeline.create(
             no_pii_pipeline_config,
             self.ddb_client,
-            self.kms_client,
             self.metric_reporter,
         ).run()
 
@@ -394,7 +365,6 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
     @patch.object(requests, "post")
     def test_run_classifyNewDoesntBelongToShard_skipsClassification(self, post_mock):
@@ -402,11 +372,8 @@ class ClassifierPipelineTest(TestCase):
         post_mock.side_effect = [self.default_fake_responses[0]]
 
         sd = Stubber(self.ddb_client)
-        sk = Stubber(self.kms_client)
         sd.add_response("query", {"Items": []})
-        sk.add_response("decrypt", {"Plaintext": b"dummyPassword"})
         sd.activate()
-        sk.activate()
 
         # Consistent hash of "test" (the test schema name) is 44363272, since 44363272 % 2 == 0, shard 1 should ignore it
         two_shards_config = self.default_pipeline_config.copy()
@@ -414,7 +381,7 @@ class ClassifierPipelineTest(TestCase):
         two_shards_config["num_shards"] = 2
 
         ClassifierPipeline.create(
-            two_shards_config, self.ddb_client, self.kms_client, self.metric_reporter
+            two_shards_config, self.ddb_client, self.metric_reporter
         ).run()
 
         increment_expected_calls = []
@@ -426,7 +393,6 @@ class ClassifierPipelineTest(TestCase):
         self._assert_metric_calls(increment_expected_calls, duration_expected_calls)
 
         sd.assert_no_pending_responses()
-        sk.assert_no_pending_responses()
 
 
 class AddStatusRemovedTransformer(Transformer):
