@@ -46,6 +46,7 @@ def run(config: str) -> None:
         {
             "num_shards": os.environ["NUM_SHARDS"].split("-")[1],
             "shard_id": os.environ["SHARD_ID"].split("-")[1],
+            "datahub_password": os.environ["DATAHUB_USER_PASSWORD"]
         }
     )
 
@@ -56,7 +57,7 @@ def run(config: str) -> None:
     )
     try:
         pipeline = ClassifierPipeline.create(
-            pipeline_config, boto3.client("dynamodb"), boto3.client("kms"), reporter
+            pipeline_config, boto3.client("dynamodb"), reporter
         )
     except ValidationError as e:
         click.echo(e, err=True)
