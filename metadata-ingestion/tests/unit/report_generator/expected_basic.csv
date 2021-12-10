@@ -3,3 +3,4 @@ stage_db.users.user,id,IDENTIFIER,"CCPA, GDPR"
 stage_db.users.user,full_name,PERSON,"CCPA, GDPR"
 stage_db.users.user,created,DATE,
 stage_db.users.user,updated,DATE,
+stage_db.users.user,field_without_terms,,

@@ -70,7 +70,7 @@ class PrivacyTermExtractor:
                   }
                 }
               }
-              # zero represents the latest version with otherwise monotonic ordering starting at one.
+              # zero represents the latest version
               schemaMetadata(version: 0) {
                 name
                 fields {
@@ -112,6 +112,7 @@ class PrivacyTermExtractor:
                 'page_size': self.PAGE_SIZE,
                 'offset': offset
             }
+            logger.info(f'Issuing graphql queries with variables: {graphql_variables}')
 
             payload = {'query': self.GRAPHQL_QUERY, 'variables': graphql_variables}
             response = requests.post(self.graphql_api_url, json=payload)
@@ -159,6 +160,14 @@ class PrivacyTermExtractor:
                 row['privacy_law'].append(term_id.split('.')[-1])
 
 class OutputWriter:
+    """ Handles writing to a `fileobj` based on the `output_format`.
+
+    - `write` will write to the `fileobj` passed in in constructor
+    - `fileobj` should be managed outside of this class
+    """
+    output_format: OutputFormatEnum
+    fileobj: TextIO
+
     def __init__(self, output_format: OutputFormatEnum, fileobj: TextIO):
         self.output_format = output_format
         self.fileobj = fileobj

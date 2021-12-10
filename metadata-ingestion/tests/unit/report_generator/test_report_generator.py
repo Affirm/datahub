@@ -54,6 +54,12 @@ class TestReportGenerator(TestCase):
                 'type': ['DATE'],
                 'privacy_law': [],
             },
+            {
+                'dataset': 'stage_db.users.user',
+                'field': 'field_without_terms',
+                'type': [],
+                'privacy_law': [],
+            },
         ]
         mock_privacy_term_extractor_class.return_value = mock_extractor
 
@@ -64,7 +70,9 @@ class TestReportGenerator(TestCase):
         mock_extractor.yield_search_results_assert_called_once_with(self.config['search_queries'])
 
         with open(os.path.join(FIXTURES_PATH, 'expected_basic.csv'), 'rb') as f:
-            actual_lines = f.readlines()
+            expected_lines = f.readlines()
+
         self.tmp_output_file.seek(0)
-        for expected, actual in zip(self.tmp_output_file.readlines(), actual_lines):
+        actual_lines = self.tmp_output_file.readlines()
+        for expected, actual in zip(expected_lines, actual_lines):
             self.assertEqual(expected.strip(), actual.strip())
