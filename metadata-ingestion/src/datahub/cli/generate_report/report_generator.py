@@ -2,6 +2,7 @@ import csv
 import datetime
 import itertools
 import logging
+import os
 import tempfile
 from typing import Any, Dict, Generator, Iterable, TextIO
 
@@ -112,7 +113,7 @@ class PrivacyTermExtractor:
                 'page_size': self.PAGE_SIZE,
                 'offset': offset
             }
-            logger.info(f'Issuing graphql queries with variables: {graphql_variables}')
+            logger.info(f'Issuing graphql query with variables: {graphql_variables}')
 
             payload = {'query': self.GRAPHQL_QUERY, 'variables': graphql_variables}
             response = requests.post(self.graphql_api_url, json=payload)
@@ -224,7 +225,7 @@ class OutputExporter:
     def export(self):
         if type(self.output_destination) == FileOutput:
             # File should be written to, nothing to export
-            pass
+            logger.info(f'Output at: {os.path.abspath(self._fileobj.name)}')
         elif type(self.output_destination) == S3Output:
             # set file to beginning before upload
             # or else it will upload an empty file.
