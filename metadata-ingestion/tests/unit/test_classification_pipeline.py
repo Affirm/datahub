@@ -52,6 +52,7 @@ class ClassifierPipelineTest(TestCase):
             "datahub_username": "dummyUser",
             "datahub_password": "abc",
             "num_shards": 1,
+            "num_worker_threads": 4,
             "pii_classification_state_table_name": "DummyPiiTable",
             "shard_id": 0,
             "source": {
@@ -180,8 +181,8 @@ class ClassifierPipelineTest(TestCase):
 
         sd = Stubber(self.ddb_client)
         sd.add_response("query", {"Items": []})
-        sd.add_response("put_item", {})
         sd.add_response("query", {"Items": []})
+        sd.add_response("put_item", {})
         sd.add_response("put_item", {})
         sd.activate()
 
