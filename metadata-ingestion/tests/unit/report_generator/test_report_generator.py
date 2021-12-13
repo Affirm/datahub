@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import requests
 
+import datahub.cli.generate_report.report_generator
 from datahub.cli.generate_report.report_generator import (
     PrivacyTermExtractor,
     ReportGenerator,
@@ -30,7 +31,7 @@ class TestReportGenerator(TestCase):
     def tearDown(self):
         self.tmp_output_file.close()
 
-    @patch('datahub.cli.generate_report.report_generator.PrivacyTermExtractor')
+    @patch.object(datahub.cli.generate_report.report_generator, 'PrivacyTermExtractor')
     def test_basic(self, mock_privacy_term_extractor_class):
         mock_extractor = MagicMock()
         mock_extractor.yield_search_results.return_value = [
