@@ -45,8 +45,9 @@ def run(config: str) -> None:
     pipeline_config.update(
         {
             "num_shards": os.environ["NUM_SHARDS"].split("-")[1],
+            "num_worker_threads": os.environ["NUM_WORKER_THREADS"].split("-")[1],
             "shard_id": os.environ["SHARD_ID"].split("-")[1],
-            "datahub_password": os.environ["DATAHUB_USER_PASSWORD"]
+            "datahub_password": os.environ["DATAHUB_USER_PASSWORD"],
         }
     )
 
