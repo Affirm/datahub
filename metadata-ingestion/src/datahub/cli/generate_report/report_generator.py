@@ -99,12 +99,12 @@ class PrivacyTermExtractor:
 
     def yield_search_results(self, search_queries: Iterable[str]) -> Generator[Dict, None, None]:
         return itertools.chain.from_iterable(
-            self.yield_rows(entity)
+            self._yield_rows(entity)
             for search_query in search_queries
-            for entity in self.yield_search_results_single_query(search_query)
+            for entity in self._yield_graphql_search_results(search_query)
         )
 
-    def yield_search_results_single_query(self, search_query: str) -> Generator[Dict, None, None]:
+    def _yield_graphql_search_results(self, search_query: str) -> Generator[Dict, None, None]:
         total = self.MAX_SEARCH_RESULTS_TOTAL
         offset = 0
         while offset < total:
@@ -129,7 +129,7 @@ class PrivacyTermExtractor:
             offset += self.PAGE_SIZE
 
     @classmethod
-    def yield_rows(cls, entity: Dict) -> Generator[Dict, None, None]:
+    def _yield_rows(cls, entity: Dict) -> Generator[Dict, None, None]:
         # Merge glossaryTerms from both schemaMetadata and editableSchemaMetadata
         merged_rows = {}
         # schemaMetadata will contain all fields
@@ -140,17 +140,17 @@ class PrivacyTermExtractor:
                 'type': [],
                 'privacy_law': [],
             }
-            cls.add_terms_to_row(merged_rows[field['fieldPath']], field)
+            cls._add_terms_to_row(merged_rows[field['fieldPath']], field)
 
         # editableSchemaMetadata can be empty or contain subset of fields
         if entity['entity']['editableSchemaMetadata']:
             for field in entity['entity']['editableSchemaMetadata']['editableSchemaFieldInfo']:
-                cls.add_terms_to_row(merged_rows[field['fieldPath']], field)
+                cls._add_terms_to_row(merged_rows[field['fieldPath']], field)
 
         yield from merged_rows.values()
 
     @classmethod
-    def add_terms_to_row(cls, row: Dict, field: Dict) -> None:
+    def _add_terms_to_row(cls, row: Dict, field: Dict) -> None:
         if not field['glossaryTerms']:
             return
         for term in field['glossaryTerms']['terms']:

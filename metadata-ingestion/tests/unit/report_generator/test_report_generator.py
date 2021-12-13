@@ -1,10 +1,14 @@
 import os
 import tempfile
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from datahub.cli.generate_report.report_generator import ReportGenerator
+import requests
 
+from datahub.cli.generate_report.report_generator import (
+    PrivacyTermExtractor,
+    ReportGenerator,
+)
 
 FIXTURES_PATH = os.path.dirname(__file__)
 
@@ -76,3 +80,138 @@ class TestReportGenerator(TestCase):
         actual_lines = self.tmp_output_file.readlines()
         for expected, actual in zip(expected_lines, actual_lines):
             self.assertEqual(expected.strip(), actual.strip())
+
+class TestPrivacyTermExtractor(TestCase):
+
+    @patch.object(requests, "post")
+    def test_yield_search_results(self, mock_post):
+        mock_search_results = [
+            {
+                "entity": {
+                    "schemaMetadata": {
+                        "name": "stage_db.users.user",
+                        "fields": [
+                            {
+                                "fieldPath": "first_name",
+                                "glossaryTerms": None
+                            },
+                            {
+                                "fieldPath": "roles",
+                                "glossaryTerms": None
+                            }
+                        ]
+                    },
+                    "editableSchemaMetadata": {
+                        "editableSchemaFieldInfo": [
+                            {
+                                "fieldPath": "first_name",
+                                "glossaryTerms": {
+                                    "terms": [
+                                        {
+                                            "term": {
+                                                "urn": "urn:li:glossaryTerm:PrivacyLaw.PIPEDA",
+                                                "name": "PIPEDA"
+                                            }
+                                        },
+                                        {
+                                            "term": {
+                                                "urn": "urn:li:glossaryTerm:PrivacyLaw.CCPA",
+                                                "name": "CCPA"
+                                            }
+                                        },
+                                        {
+                                            "term": {
+                                                "urn": "urn:li:glossaryTerm:PiiData.PERSON",
+                                                "name": "PERSON"
+                                            }
+                                        },
+                                        {
+                                            "term": {
+                                                "urn": "urn:li:glossaryTerm:PiiData.NORP",
+                                                "name": "NORP"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "entity": {
+                    "schemaMetadata": {
+                        "name": "stage_db.some_schema.some_event_table",
+                        "fields": [
+                            {
+                                "fieldPath": "event_id",
+                                "glossaryTerms": None
+                            },
+                            {
+                                "fieldPath": "event_time",
+                                "glossaryTerms": None
+                            }
+                        ]
+                    },
+                    "editableSchemaMetadata": {
+                        "editableSchemaFieldInfo": [
+                            {
+                                "fieldPath": "event_time",
+                                "glossaryTerms": {
+                                    "terms": [
+                                        {
+                                            "term": {
+                                                "urn": "urn:li:glossaryTerm:PiiData.DATE",
+                                                "name": "DATE"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+        ]
+        response1 = MagicMock()
+        response1.json.return_value = {
+            'data': {
+                'search': {
+                    'total': len(mock_search_results),
+                    'searchResults': mock_search_results
+                },
+            },
+        }
+        mock_post.side_effect = [response1]
+
+        expected = [
+            {
+                'dataset': 'stage_db.users.user',
+                'field': 'first_name',
+                'type': ['PERSON', 'NORP'],
+                'privacy_law': ['PIPEDA', 'CCPA'],
+            },
+            {
+                'dataset': 'stage_db.users.user',
+                'field': 'roles',
+                'type': [],
+                'privacy_law': [],
+            },
+            {
+                'dataset': 'stage_db.some_schema.some_event_table',
+                'field': 'event_id',
+                'type': [],
+                'privacy_law': [],
+            },
+            {
+                'dataset': 'stage_db.some_schema.some_event_table',
+                'field': 'event_time',
+                'type': ['DATE'],
+                'privacy_law': [],
+            },
+        ]
+        extractor = PrivacyTermExtractor('http://localhost:1234')
+
+        actual = list(extractor.yield_search_results(['snowflake']))
+        mock_post.assert_called_once()
+        self.assertListEqual(expected, actual)
