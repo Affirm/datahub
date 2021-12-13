@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer as timer
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -33,6 +34,7 @@ class ClassifierPipelineConfig(ConfigModel):
     datahub_username: str
     datahub_password: str
     num_shards: int
+    num_worker_threads: int
     pii_classification_state_table_name: str
     shard_id: int
     source: SourceConfig
@@ -51,6 +53,7 @@ class ClassifierPipeline:
     datahub_cookies: Dict[str, str]
     my_shard_id: int
     num_shards: int
+    num_worker_threads: int
     source: SampleableSource
     transformers: List[Transformer]
 
@@ -80,6 +83,7 @@ class ClassifierPipeline:
         self.datahub_base_url = config.datahub_base_url
         self.my_shard_id = config.shard_id
         self.num_shards = config.num_shards
+        self.num_worker_threads = config.num_worker_threads
         assert self.my_shard_id >= 0 and self.my_shard_id < self.num_shards
 
         self.ddb_client = ddb_client
@@ -91,9 +95,7 @@ class ClassifierPipeline:
 
         self._configure_transforms()
 
-    def _login_to_datahub(
-        self, username: str, datahub_password: str
-    ) -> Dict[str, str]:
+    def _login_to_datahub(self, username: str, datahub_password: str) -> Dict[str, str]:
         url = f"{self.datahub_base_url}{self.DATAHUB_LOGIN_ENDPOINT}"
         creds = {"username": username, "password": datahub_password}
 
@@ -252,66 +254,67 @@ class ClassifierPipeline:
         config = ClassifierPipelineConfig.parse_obj(config_dict)
         return cls(config, ddb_client, metric_reporter)
 
-    def run(self) -> None:
+    def _process_record(self, record_envelope: RecordEnvelope) -> None:
+        try:
+            urn = record_envelope.record.proposedSnapshot.urn
+            schema_name = self._get_schema_name(record_envelope)
+            schema_name_hash = self._consistent_hash(schema_name)
+            does_record_belong_to_shard = (
+                schema_name_hash % self.num_shards == self.my_shard_id
+            )
+
+            record = self._get_dataset_pii_classification_state_record(urn)
+            # TODO one verified working in prod E2E, change to 1 week TTL https://jira.team.affirm.com/browse/DF-1737
+            is_ttl_expired = record is None or (
+                (
+                    datetime.datetime.fromisoformat(record["lastEvalDate"]["S"])
+                    + datetime.timedelta(seconds=30)
+                )
+                < datetime.datetime.now()
+            )
+            if does_record_belong_to_shard:
+                if is_ttl_expired:
+                    logger.info(
+                        f"Shard {self.my_shard_id} attempting to classify urn {urn}"
+                    )
+                    start_single_time_seconds = timer()
+                    classification_res = self.classifier.classify(schema_name, urn)
+                    self._write_classification_result(
+                        urn, classification_res, record is None
+                    )
+                    single_classify_time_millis = (
+                        timer() - start_single_time_seconds
+                    ) * 1000
+                    self.metric_reporter.duration_millis(
+                        DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME,
+                        single_classify_time_millis,
+                    )
+                    logger.info(
+                        f"Classify for urn {urn} took {single_classify_time_millis}"
+                    )
+                else:
+                    self.metric_reporter.increment(
+                        DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED
+                    )
+        except Exception as e:
+            logger.error(f"Classification pipeline failed for {urn} error {e}")
+            self.metric_reporter.increment(
+                DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED
+            )
+
+    def run(self) -> ThreadPoolExecutor:
         extractor: Extractor = self.extractor_class()
+
         self._zero_metrics()
         start_overall_time_seconds = timer()
-        for wu in self.source.get_workunits():
-            extractor.configure({}, self.ctx)
 
-            for record_envelope in self.transform(extractor.get_records(wu)):
-                urn = record_envelope.record.proposedSnapshot.urn
-                schema_name = self._get_schema_name(record_envelope)
-                schema_name_hash = self._consistent_hash(schema_name)
-                does_record_belong_to_shard = (
-                    schema_name_hash % self.num_shards == self.my_shard_id
-                )
+        with ThreadPoolExecutor(self.num_worker_threads) as executor:
+            for wu in self.source.get_workunits():
+                extractor.configure({}, self.ctx)
+                for record_envelope in self.transform(extractor.get_records(wu)):
+                    executor.submit(self._process_record, record_envelope)
+                extractor.close()
 
-                record = self._get_dataset_pii_classification_state_record(urn)
-                # TODO one verified working in prod E2E, change to 1 week TTL https://jira.team.affirm.com/browse/DF-1737
-                is_ttl_expired = record is None or (
-                    (
-                        datetime.datetime.fromisoformat(record["lastEvalDate"]["S"])
-                        + datetime.timedelta(seconds=30)
-                    )
-                    < datetime.datetime.now()
-                )
-                if does_record_belong_to_shard:
-                    if is_ttl_expired:
-                        try:
-                            logger.info(
-                                f"Shard {self.my_shard_id} attempting to classify urn {urn}"
-                            )
-                            start_single_time_seconds = timer()
-                            classification_res = self.classifier.classify(
-                                schema_name, urn
-                            )
-                            self._write_classification_result(
-                                urn, classification_res, record is None
-                            )
-                            single_classify_time_millis = (
-                                timer() - start_single_time_seconds
-                            ) * 1000
-                            self.metric_reporter.duration_millis(
-                                DatahubCustomMetric.SINGLE_DATASET_CLASSIFICATION_TIME,
-                                single_classify_time_millis,
-                            )
-                            logger.info(
-                                f"Classify for urn {urn} took {single_classify_time_millis}"
-                            )
-                        except:
-                            logger.exception(
-                                f"Classification pipeline failed for {urn}"
-                            )
-                            self.metric_reporter.increment(
-                                DatahubCustomMetric.DATASET_CLASSIFICATION_FAILED
-                            )
-                    else:
-                        self.metric_reporter.increment(
-                            DatahubCustomMetric.DATASET_CLASSIFICATION_SKIPPED
-                        )
-
-            extractor.close()
         overall_classify_time_millis = (timer() - start_overall_time_seconds) * 1000
         self.metric_reporter.duration_millis(
             DatahubCustomMetric.ALL_DATASETS_CLASSIFICATION_TIME,
