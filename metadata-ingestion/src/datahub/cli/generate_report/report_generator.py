@@ -115,9 +115,9 @@ class PrivacyTermExtractor:
     def _yield_graphql_search_results(
         self, search_query: str
     ) -> Generator[Dict, None, None]:
-        total = None
+        total_num_of_datasets = None
         offset = 0
-        while total is None or offset < total:
+        while total_num_of_datasets is None or offset < total_num_of_datasets:
             graphql_variables = {
                 "search_query": search_query,
                 "page_size": self.search_query_page_size,
@@ -135,7 +135,7 @@ class PrivacyTermExtractor:
                 yield entity
                 num_entities_processed_for_current_query += 1
 
-            total = response_json["data"]["search"]["total"]
+            total_num_of_datasets = response_json["data"]["search"]["total"]
             offset += num_entities_processed_for_current_query
 
     @classmethod
