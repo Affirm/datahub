@@ -1,46 +1,40 @@
-# TODO impl https://jira.team.affirm.com/browse/DF-1739
-
 import logging
-import os
 import pathlib
 import sys
 
 import click
-from click_default_group import DefaultGroup
 from pydantic import ValidationError
-from tabulate import tabulate
 
 import datahub as datahub_package
+from datahub.cli.generate_report.report_generator import ReportGenerator
 from datahub.configuration.config_loader import load_config_file
-from datahub.ingestion.run.pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
 
 
-@click.group(cls=DefaultGroup)
-def generate_report() -> None:
-    """Ingest metadata into DataHub."""
-    pass
-
-
-@generate_report.command(default=True)
-def run(config: str) -> None:
-    """Ingest metadata into DataHub."""
+@click.command()
+@click.option(
+    "-c",
+    "--config",
+    type=click.Path(exists=True, dir_okay=False),
+    help="Config file in .toml or .yaml format.",
+    required=True,
+)
+def generate_report(config: str) -> None:
+    """Generate reports from DataHub."""
     logger.debug("DataHub CLI version: %s", datahub_package.nice_version_name())
 
     config_file = pathlib.Path(config)
-    pipeline_config = load_config_file(config_file)
+    config = load_config_file(config_file)
 
     try:
-        logger.debug(f"Using config: {pipeline_config}")
-        pipeline = Pipeline.create(pipeline_config)
+        logger.debug(f"Using config: {config}")
+        report_generator = ReportGenerator.create(config)
     except ValidationError as e:
         click.echo(e, err=True)
         sys.exit(1)
 
-    logger.info("Starting metadata generate_report")
-    logger.info(os.environ["S3_OUTPUT_PATH_ROOT"])
-    pipeline.run()
-    logger.info("Finished metadata generate_report")
-    ret = pipeline.pretty_print_summary()
+    logger.info("Starting generate report")
+    ret = report_generator.generate()
+    logger.info("Finished generate report")
     sys.exit(ret)
