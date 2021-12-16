@@ -1,5 +1,4 @@
 import logging
-import os
 import pathlib
 import sys
 
@@ -7,10 +6,11 @@ import click
 from pydantic import ValidationError
 
 import datahub as datahub_package
-from datahub.configuration.config_loader import load_config_file
 from datahub.cli.generate_report.report_generator import ReportGenerator
+from datahub.configuration.config_loader import load_config_file
 
 logger = logging.getLogger(__name__)
+
 
 @click.command()
 @click.option(
