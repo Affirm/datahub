@@ -21,6 +21,7 @@ RUN cd /datahub-src/metadata-ingestion && \
 FROM base as prod-install
 COPY --from=prod-codegen /datahub-src/metadata-ingestion /datahub-ingestion
 COPY --from=prod-codegen /root/.cache/pip /root/.cache/pip
+COPY --from=prod-codegen /datahub-src/docker/datahub-ingestion/privacy_type_mapping.csv /data/privacy_type_mapping.csv
 ARG RELEASE_VERSION
 RUN cd /datahub-ingestion && \
     sed -i.bak "s/__version__ = \"0.0.0.dev0\"/__version__ = \"$RELEASE_VERSION\"/" src/datahub/__init__.py && \
@@ -30,8 +31,6 @@ RUN cd /datahub-ingestion && \
     pip freeze
 
 COPY privacy_type_mapping.csv /data/privacy_type_mapping.csv
->>>>>>> 70adc5d7ba (Initial classifier impl)
-
 FROM base as dev-install
 # Dummy stage for development. Assumes code is built on your machine and mounted to this image.
 # See this excellent thread https://github.com/docker/cli/issues/1134
