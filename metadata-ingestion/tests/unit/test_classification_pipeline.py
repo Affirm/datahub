@@ -68,15 +68,6 @@ class ClassifierPipelineTest(TestCase):
             ],
         }
 
-        # TODO file path temporary until classifier logic ported into lib
-        privacy_mapping_file_path = "/tmp/mapping.csv"
-        os.environ["PRIVACY_TYPE_MAPPING_FILE_PATH"] = privacy_mapping_file_path
-        with open(privacy_mapping_file_path, "w+") as f:
-            f.write("Type,Description,Requirements,Note")
-            f.write('PERSON,"People, including fictional.","GLBA')
-            f.write("CCPA")
-            f.write('PIPEDA",')
-
         self.success_attach_term_response = "{addTerm: true}"
         self.sample_urn = "urn:li:dataset:(urn:li:dataPlatform:test_platform,test,PROD)"
         fake_responses = [Mock(), MagicMock(), MagicMock(), MagicMock()]
