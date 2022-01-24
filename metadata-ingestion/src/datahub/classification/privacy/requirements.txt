@@ -1,0 +1,6 @@
+nose-timer
+nosexcover
+commonregex
+nltk
+spacy
+mypy
