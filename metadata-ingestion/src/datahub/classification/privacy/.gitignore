@@ -1,0 +1,59 @@
+# @generated
+# python compiled files
+*.py[cod]
+
+# emacs temp files
+*~
+#*#
+
+# C extensions
+*.so
+
+# Packages
+distribute*.tar.gz
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+*.noseids
+.coverage
+.tox
+nosetests.xml
+coverage.xml
+pylint.out
+
+# Translations
+*.mo
+
+# misc
+*.pbm
+*.pil
+*.gif
+*.swp
+*.swo
+*.mwb.bak
+*.bak
+.pyenv/*
+*logs/
+log/*
+.DS_Store
+.venv
+.idea
+snapshots/*
+node_modules/*
+
+.ropeproject
+

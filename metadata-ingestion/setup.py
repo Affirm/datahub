@@ -27,7 +27,7 @@ base_requirements = {
     "mypy_extensions>=0.4.3",
     # Actual dependencies.
     "typing-inspect",
-    "pydantic>=1.5.1",
+    "pydantic>=1.5.1"
 }
 
 framework_common = {
@@ -48,7 +48,12 @@ framework_common = {
 
 classify = {
   "pandas",
+  "nose-timer",
+  "nosexcover",
+  "commonregex",
+  "nltk",
   "spacy",
+  "mypy",
   "requests"
 }
 
