@@ -62,7 +62,12 @@ framework_common = {
 
 classify = {
   "pandas",
+  "nose-timer",
+  "nosexcover",
+  "commonregex",
+  "nltk",
   "spacy",
+  "mypy",
   "requests"
 }
 
