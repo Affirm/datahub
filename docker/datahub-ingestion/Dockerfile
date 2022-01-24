@@ -34,7 +34,7 @@ ARG RELEASE_VERSION
 RUN cd /datahub-ingestion && \
     sed -i.bak "s/__version__ = \"0.0.0.dev0\"/__version__ = \"$RELEASE_VERSION\"/" src/datahub/__init__.py && \
     cat src/datahub/__init__.py && \
-    pip install ".[all]" && python -m spacy download en_core_web_sm
+    pip install ".[all]"
 
 FROM base as dev-install
 # Dummy stage for development. Assumes code is built on your machine and mounted to this image.
