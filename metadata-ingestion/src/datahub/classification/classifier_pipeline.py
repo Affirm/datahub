@@ -13,11 +13,13 @@ import requests
 from datahub.classification.classifier import ClassificationResult, Classifier
 from datahub.configuration.common import ConfigModel, DynamicTypedConfig
 from datahub.ingestion.api.common import PipelineContext, RecordEnvelope
-from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import Extractor
 from datahub.ingestion.api.transform import Transformer
 from datahub.ingestion.extractor.extractor_registry import extractor_registry
 from datahub.ingestion.source.source_registry import source_registry
+from datahub.ingestion.source.state.sampleable_stateful_ingestion_base import (
+    SampleableStatefulIngestionSourceBase,
+)
 from datahub.ingestion.transformer.transform_registry import transform_registry
 from datahub.metadata.schema_classes import SchemaMetadataClass
 from datahub.utilities.metrics import DatahubCustomMetric, DatahubCustomMetricReporter
@@ -54,7 +56,7 @@ class ClassifierPipeline:
     my_shard_id: int
     num_shards: int
     num_worker_threads: int
-    source: SampleableSource
+    source: SampleableStatefulIngestionSourceBase
     transformers: List[Transformer]
 
     ddb_client: Any
@@ -71,7 +73,7 @@ class ClassifierPipeline:
         self.ctx = PipelineContext(run_id=str(uuid.uuid1()))
         source_type = self.config.source.type
         source_class = source_registry.get(source_type)
-        self.source: SampleableSource = source_class.create(
+        self.source: SampleableStatefulIngestionSourceBase = source_class.create(
             self.config.source.dict().get("config", {}), self.ctx
         )
         self.extractor_class = extractor_registry.get(self.config.source.extractor)

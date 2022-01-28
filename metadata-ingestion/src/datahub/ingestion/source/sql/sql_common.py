@@ -30,12 +30,14 @@ from datahub.emitter.mce_builder import (
 )
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.ingestion.api.common import PipelineContext, RecordEnvelope
-from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.ingestion.source.state.checkpoint import Checkpoint
 from datahub.ingestion.source.state.sql_common_state import (
     BaseSQLAlchemyCheckpointState,
+)
+from datahub.ingestion.source.state.sampleable_stateful_ingestion_base import (
+    SampleableStatefulIngestionSourceBase,
 )
 from datahub.ingestion.source.state.stateful_ingestion_base import (
     JobId,
@@ -350,7 +352,7 @@ def get_schema_metadata(
     return schema_metadata
 
 
-class SQLAlchemySource(SampleableSource):
+class SQLAlchemySource(SampleableStatefulIngestionSourceBase):
     """A Base class for all SQL Sources that use SQLAlchemy to extend"""
 
     def __init__(self, config: SQLAlchemyConfig, ctx: PipelineContext, platform: str):

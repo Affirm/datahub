@@ -8,7 +8,9 @@ import spacy
 
 from datahub.classification.privacy.privacy.api import PIIEngine
 from datahub.ingestion.api.common import RecordEnvelope
-from datahub.ingestion.api.sampleable_source import SampleableSource
+from datahub.ingestion.source.state.sampleable_stateful_ingestion_base import (
+    SampleableStatefulIngestionSourceBase,
+)
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -23,9 +25,9 @@ class ClassificationResult:
 
 
 class Classifier:
-    sampler: SampleableSource
+    sampler: SampleableStatefulIngestionSourceBase
 
-    def __init__(self, sampler: SampleableSource):
+    def __init__(self, sampler: SampleableStatefulIngestionSourceBase):
         self.sampler = sampler
         # TODO https://jira.team.affirm.com/browse/DF-1737
         self.engine = PIIEngine()

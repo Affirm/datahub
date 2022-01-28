@@ -11,10 +11,12 @@ from botocore.stub import Stubber
 
 from datahub.classification.classifier_pipeline import ClassifierPipeline
 from datahub.ingestion.api.common import PipelineContext, RecordEnvelope, WorkUnit
-from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.transform import Transformer
 from datahub.ingestion.api.workunit import MetadataWorkUnit
+from datahub.ingestion.source.state.sampleable_stateful_ingestion_base import (
+    SampleableStatefulIngestionSourceBase,
+)
 from datahub.metadata.com.linkedin.pegasus2avro.common import Status
 from datahub.metadata.com.linkedin.pegasus2avro.mxe import SystemMetadata
 from datahub.metadata.schema_classes import (
@@ -402,7 +404,7 @@ class AddStatusRemovedTransformer(Transformer):
             yield record_envelope
 
 
-class FakeSingleSourceWithPii(SampleableSource):
+class FakeSingleSourceWithPii(SampleableStatefulIngestionSourceBase):
     def __init__(self):
         self.source_report = SourceReport()
         self.work_units: List[MetadataWorkUnit] = [
@@ -430,7 +432,7 @@ class FakeSingleSourceWithPii(SampleableSource):
         pass
 
 
-class FakeMultiSourceWithPii(SampleableSource):
+class FakeMultiSourceWithPii(SampleableStatefulIngestionSourceBase):
     def __init__(self):
         self.source_report = SourceReport()
         self.work_units: List[MetadataWorkUnit] = [
@@ -459,7 +461,7 @@ class FakeMultiSourceWithPii(SampleableSource):
         pass
 
 
-class FakeSingleSourceWithoutPii(SampleableSource):
+class FakeSingleSourceWithoutPii(SampleableStatefulIngestionSourceBase):
     def __init__(self):
         self.source_report = SourceReport()
         self.work_units: List[MetadataWorkUnit] = [
