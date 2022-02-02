@@ -350,7 +350,7 @@ def get_schema_metadata(
     return schema_metadata
 
 
-class SQLAlchemySource(SampleableSource):
+class SQLAlchemySource(StatefulIngestionSourceBase):
     """A Base class for all SQL Sources that use SQLAlchemy to extend"""
 
     def __init__(self, config: SQLAlchemyConfig, ctx: PipelineContext, platform: str):

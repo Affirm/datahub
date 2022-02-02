@@ -10,6 +10,7 @@ from datahub.configuration.common import (
 )
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.ingestion_state_provider import IngestionStateProvider, JobId
+from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import Source
 from datahub.ingestion.source.state.checkpoint import Checkpoint, CheckpointStateBase
 from datahub.ingestion.source.state_provider.datahub_ingestion_state_provider import (
@@ -54,7 +55,7 @@ class StatefulIngestionConfigBase(ConfigModel):
     stateful_ingestion: Optional[StatefulIngestionConfig] = None
 
 
-class StatefulIngestionSourceBase(Source):
+class StatefulIngestionSourceBase(SampleableSource):
     """
     Defines the base class for all stateful sources.
     """
