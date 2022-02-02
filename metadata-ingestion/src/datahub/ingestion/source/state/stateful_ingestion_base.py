@@ -21,6 +21,7 @@ from datahub.ingestion.api.ingestion_job_checkpointing_provider_base import (
 from datahub.ingestion.api.ingestion_job_reporting_provider_base import (
     IngestionReportingProviderBase,
 )
+from datahub.ingestion.api.sampleable_source import SampleableSource
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.source.state.checkpoint import Checkpoint, CheckpointStateBase
 from datahub.ingestion.source.state_provider.state_provider_registry import (
@@ -71,7 +72,7 @@ class StatefulIngestionReport(SourceReport):
     pass
 
 
-class StatefulIngestionSourceBase(Source):
+class StatefulIngestionSourceBase(SampleableSource):
     """
     Defines the base class for all stateful sources.
     """
