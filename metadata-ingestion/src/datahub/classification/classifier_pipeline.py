@@ -66,7 +66,6 @@ class ClassifierPipeline:
         ddb_client: Any,
         metric_reporter: DatahubCustomMetricReporter,
     ):
-        logger.info(f"Building classifier pipeline from config: {config}")
         self.config = config
         self.ctx = PipelineContext(run_id=str(uuid.uuid1()))
         source_type = self.config.source.type
