@@ -157,6 +157,12 @@ class PrivacyTermExtractor:
             for field in entity["entity"]["editableSchemaMetadata"][
                 "editableSchemaFieldInfo"
             ]:
+                if field["fieldPath"] not in merged_rows:
+                    logger.warning('Found fieldPath in editableSchemaMetadata.fields '
+                                   'but not in schemaMetadata.fields: '
+                                   f'fieldPath={field["fieldPath"]} '
+                                   f'dataset={entity["entity"]["schemaMetadata"]["name"]}')
+                    continue
                 cls._add_terms_to_row(merged_rows[field["fieldPath"]], field)
 
         yield from merged_rows.values()
