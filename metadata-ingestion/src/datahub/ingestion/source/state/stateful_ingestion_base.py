@@ -72,7 +72,7 @@ class StatefulIngestionReport(SourceReport):
     pass
 
 
-class StatefulIngestionSourceBase(SampleableSource):
+class StatefulIngestionSourceBase(Source):
     """
     Defines the base class for all stateful sources.
     """

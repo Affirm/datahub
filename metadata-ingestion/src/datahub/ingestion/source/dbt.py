@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, cast
 
+import boto3
 import dateutil.parser
 import requests
 from pydantic import validator
@@ -323,6 +324,12 @@ def extract_dbt_entities(
 def load_file_as_json(uri: str) -> Any:
     if re.match("^https?://", uri):
         return json.loads(requests.get(uri).text)
+    elif re.match("^s3://", uri):
+        s3_bucket, s3_key = uri.replace("s3://", "").split("/", 1)
+        s3 = boto3.resource("s3")
+        return json.loads(
+            s3.Object(s3_bucket, s3_key).get()["Body"].read().decode("utf-8")
+        )
     else:
         with open(uri, "r") as f:
             return json.load(f)
