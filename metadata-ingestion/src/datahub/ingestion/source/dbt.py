@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, cast
 from urllib.parse import urlparse
 
+import boto3
 import dateutil.parser
 import requests
 from pydantic import validator
@@ -412,6 +413,86 @@ def extract_dbt_entities(
         dbt_entities.append(dbtNode)
 
     return dbt_entities
+
+
+def load_file_as_json(uri: str) -> Any:
+    if re.match("^https?://", uri):
+        return json.loads(requests.get(uri).text)
+    elif re.match("^s3://", uri):
+        s3_bucket, s3_key = uri.replace("s3://", "").split("/", 1)
+        s3 = boto3.resource("s3")
+        return json.loads(
+            s3.Object(s3_bucket, s3_key).get()["Body"].read().decode("utf-8")
+        )
+    else:
+        with open(uri, "r") as f:
+            return json.load(f)
+
+
+def loadManifestAndCatalog(
+    manifest_path: str,
+    catalog_path: str,
+    sources_path: Optional[str],
+    load_schemas: bool,
+    use_identifiers: bool,
+    tag_prefix: str,
+    node_type_pattern: AllowDenyPattern,
+    report: DBTSourceReport,
+    node_name_pattern: AllowDenyPattern,
+) -> Tuple[
+    List[DBTNode],
+    Optional[str],
+    Optional[str],
+    Optional[str],
+    Optional[str],
+    Dict[str, Dict[str, Any]],
+]:
+    dbt_manifest_json = load_file_as_json(manifest_path)
+
+    dbt_catalog_json = load_file_as_json(catalog_path)
+
+    if sources_path is not None:
+        dbt_sources_json = load_file_as_json(sources_path)
+        sources_results = dbt_sources_json["results"]
+    else:
+        sources_results = {}
+
+    manifest_schema = dbt_manifest_json.get("metadata", {}).get("dbt_schema_version")
+    manifest_version = dbt_manifest_json.get("metadata", {}).get("dbt_version")
+
+    catalog_schema = dbt_catalog_json.get("metadata", {}).get("dbt_schema_version")
+    catalog_version = dbt_catalog_json.get("metadata", {}).get("dbt_version")
+
+    manifest_nodes = dbt_manifest_json["nodes"]
+    manifest_sources = dbt_manifest_json["sources"]
+
+    all_manifest_entities = {**manifest_nodes, **manifest_sources}
+
+    catalog_nodes = dbt_catalog_json["nodes"]
+    catalog_sources = dbt_catalog_json["sources"]
+
+    all_catalog_entities = {**catalog_nodes, **catalog_sources}
+
+    nodes = extract_dbt_entities(
+        all_manifest_entities,
+        all_catalog_entities,
+        sources_results,
+        load_schemas,
+        use_identifiers,
+        tag_prefix,
+        node_type_pattern,
+        report,
+        node_name_pattern,
+    )
+
+    return (
+        nodes,
+        manifest_schema,
+        manifest_version,
+        catalog_schema,
+        catalog_version,
+        all_manifest_entities,
+    )
 
 
 def get_db_fqn(database: Optional[str], schema: str, name: str) -> str:
