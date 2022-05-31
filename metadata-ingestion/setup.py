@@ -248,6 +248,8 @@ plugins: Dict[str, Set[str]] = {
     "datahub-business-glossary": set(),
     "delta-lake": {*data_lake_profiling, *delta_lake},
     "dbt": {"requests"} | aws_common,
+    "data-lake": {*data_lake_base, *data_lake_profiling},
+    "s3": {*s3_base, *data_lake_profiling},
     "druid": sql_common | {"pydruid>=0.6.2"},
     # Starting with 7.14.0 python client is checking if it is connected to elasticsearch client. If its not it throws
     # UnsupportedProductError
