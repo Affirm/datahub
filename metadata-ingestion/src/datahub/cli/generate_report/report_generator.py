@@ -142,15 +142,17 @@ class PrivacyTermExtractor:
     def _yield_rows(cls, entity: Dict) -> Generator[Dict, None, None]:
         # Merge glossaryTerms from both schemaMetadata and editableSchemaMetadata
         merged_rows = {}
-        # schemaMetadata will contain all fields
-        for field in entity["entity"]["schemaMetadata"]["fields"]:
-            merged_rows[field["fieldPath"]] = {
-                "dataset": entity["entity"]["schemaMetadata"]["name"],
-                "field": field["fieldPath"],
-                "type": [],
-                "privacy_law": [],
-            }
-            cls._add_terms_to_row(merged_rows[field["fieldPath"]], field)
+        # schemaMetadata can be empty
+        if entity["entity"]["schemaMetadata"]:
+            # schemaMetadata will contain all fields
+            for field in entity["entity"]["schemaMetadata"]["fields"]:
+                merged_rows[field["fieldPath"]] = {
+                    "dataset": entity["entity"]["schemaMetadata"]["name"],
+                    "field": field["fieldPath"],
+                    "type": [],
+                    "privacy_law": [],
+                }
+                cls._add_terms_to_row(merged_rows[field["fieldPath"]], field)
 
         # editableSchemaMetadata can be empty or contain subset of fields
         if entity["entity"]["editableSchemaMetadata"]:
