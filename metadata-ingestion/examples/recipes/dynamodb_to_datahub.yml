@@ -1,0 +1,14 @@
+source:
+    type: dynamodb
+    config:
+        platform: 'dynamodb'
+        env: 'PROD'
+        table_pattern:
+            deny:
+            - '.*test.*'
+        aws_region: 'us-east-1'
+
+sink:
+    type: 'datahub-rest'
+    config:
+        server: 'http://localhost:8080'
