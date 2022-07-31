@@ -2,7 +2,7 @@ import sys
 import os
 import logging
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Sequence
 from ruamel.yaml import YAML
 
 import datahub.emitter.mce_builder as builder
@@ -19,7 +19,6 @@ from datahub.metadata.schema_classes import (
 )
 
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 yaml = YAML(typ='rt')
 
 
@@ -30,12 +29,15 @@ class AffirmArtifact:
     owner: str
     privacy_entrypoint: str
     retention_days: int
+    processing_purposes: Sequence[str]
 
     def __post_init__(self):
         if self.privacy_entrypoint is None:
             self.privacy_entrypoint = ''
         if self.retention_days is None:
             self.retention_days = -1
+        if self.processing_purposes is None:
+            self.processing_purposes = []
 
 
 class AffirmArtifactSourceConfig(ConfigModel):
@@ -57,18 +59,29 @@ def iterate_artifact(directory: str) -> Iterable[AffirmArtifact]:
                         description=content.get('description', ''),
                         owner=content.get('owner', ''),
                         privacy_entrypoint=content.get('privacy_entrypoint', ''),
-                        retention_days=content.get('retention_days', ''),
+                        retention_days=content.get('retention_days', -1),
+                        processing_purposes=content.get('processing_purposes', [])
                     )
                     yield artifact
 
 
 def make_groupname(team: str) -> str:
-    prefix = "teams/"
+    prefix = 'teams/'
     if team.startswith(prefix):
         team = team[len(prefix):]
-    dot_delimited = ".".join(reversed(team.split("/")))
-    camel_case = dot_delimited.replace("_", " ").title().replace(" ", "")
+    dot_delimited = ".".join(reversed(team.split('/')))
+    camel_case = dot_delimited.replace('_', ' ').title().replace(' ', '')
     return f'{camel_case}.Team'
+
+def make_processing_purpose_term(term: str) -> str:
+    """
+    processing_purposes.payment_processing -> ProcessingPurpose.PaymentProcessing
+    """
+    prefix = 'processing_purposes.'
+    if term.startswith(prefix):
+        term = term[len(prefix):]
+    camel_case = term.replace('_', ' ').title().replace(' ', '')
+    return f'ProcessingPurpose.{camel_case}'
 
 
 @dataclass
@@ -93,6 +106,7 @@ class AffirmArtifactSource(Source):
                 urn=dataset_urn,
                 aspects=[],
             )
+            # set up dataset properties 
             dataset_properties = DatasetPropertiesClass(
                 description=artifact.description,
                 tags=[],
@@ -102,6 +116,7 @@ class AffirmArtifactSource(Source):
                 }
             )
             dataset_snapshot.aspects.append(dataset_properties)
+            # set up ownership
             ownership = OwnershipClass(
                 owners=[
                     OwnerClass(
@@ -111,6 +126,12 @@ class AffirmArtifactSource(Source):
                 ]
             )
             dataset_snapshot.aspects.append(ownership)
+            # set up processing purposes glossary terms
+            processing_purposes = [make_processing_purpose_term(x) for x in artifact.processing_purposes]
+            processing_purpose_urns = [builder.make_term_urn(x) for x in processing_purposes]
+            processing_purpose_terms = builder.make_glossary_terms_aspect_from_urn_list(processing_purpose_urns)
+            dataset_snapshot.aspects.append(processing_purpose_terms)
+            # build mce & metadata work unit
             mce = MetadataChangeEvent(proposedSnapshot=dataset_snapshot)
             wu = MetadataWorkUnit(id=dataset_name, mce=mce)
             yield wu
