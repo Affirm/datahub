@@ -28,26 +28,28 @@ class AffirmArtifact:
     description: str
     owner: str
     privacy_entrypoint: str
-    retention_days: int
+    retention_days: str
     processing_purposes: Sequence[str]
 
     def __post_init__(self):
         if self.privacy_entrypoint is None:
             self.privacy_entrypoint = ''
-        if self.retention_days is None:
-            self.retention_days = -1
         if self.processing_purposes is None:
             self.processing_purposes = []
 
 
 class AffirmArtifactSourceConfig(ConfigModel):
+    ''' TODO support git repo to automate the whole process: 
+    git clone, locate artifact and ingest
+    '''
     directory: str
-    filename: str
     platform: str
     env: str
 
 
 def iterate_artifact(directory: str) -> Iterable[AffirmArtifact]:
+    def fix_description(description: str):
+        return ' '.join(description.split())
     for r, _, filenames in os.walk(directory):
         for filename in filenames:
             if filename.endswith('.yaml'):
@@ -56,10 +58,10 @@ def iterate_artifact(directory: str) -> Iterable[AffirmArtifact]:
                     content = yaml.load(f)
                     artifact = AffirmArtifact(
                         name=filename.replace('.yaml', ''),
-                        description=content.get('description', ''),
+                        description=fix_description(content.get('description', '')),
                         owner=content.get('owner', ''),
                         privacy_entrypoint=content.get('privacy_entrypoint', ''),
-                        retention_days=content.get('retention_days', -1),
+                        retention_days=str(content.get('retention_days')) if content.get('retention_days') else '',
                         processing_purposes=content.get('processing_purposes', [])
                     )
                     yield artifact
