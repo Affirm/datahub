@@ -361,6 +361,7 @@ plugins: Dict[str, Set[str]] = {
     "powerbi-report-server": powerbi_report_server,
     "vertica": sql_common | {"vertica-sqlalchemy-dialect[vertica-python]==0.0.1"},
     "unity-catalog": databricks_cli | {"requests"},
+    "affirm-artifact": {"ruamel.yaml>=0.17,<0.18"}
 }
 
 # This is mainly used to exclude plugins from the Docker image.
@@ -581,6 +582,7 @@ entry_points = {
         "simple_add_dataset_properties = datahub.ingestion.transformer.add_dataset_properties:SimpleAddDatasetProperties",
         "pattern_add_dataset_schema_terms = datahub.ingestion.transformer.add_dataset_schema_terms:PatternAddDatasetSchemaTerms",
         "pattern_add_dataset_schema_tags = datahub.ingestion.transformer.add_dataset_schema_tags:PatternAddDatasetSchemaTags",
+        "affirm-artifact = datahub.ingestion.source.affirm.artifact:AffirmArtifactSource",
     ],
     "datahub.ingestion.sink.plugins": [
         "file = datahub.ingestion.sink.file:FileSink",
