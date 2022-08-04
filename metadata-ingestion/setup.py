@@ -245,6 +245,7 @@ plugins: Dict[str, Set[str]] = {
     "starburst-trino-usage": sql_common | usage_common | trino,
     "nifi": {"requests", "packaging"},
     "powerbi": {"orderedset"} | microsoft_common,
+    "affirm-artifact": {"ruamel.yaml>=0.17,<0.18"}
 }
 
 all_exclude_plugins: Set[str] = {
@@ -428,6 +429,7 @@ entry_points = {
         "nifi = datahub.ingestion.source.nifi:NifiSource",
         "powerbi = datahub.ingestion.source.powerbi:PowerBiDashboardSource",
         "presto-on-hive = datahub.ingestion.source.sql.presto_on_hive:PrestoOnHiveSource",
+        "affirm-artifact = datahub.ingestion.source.affirm.artifact:AffirmArtifactSource",
     ],
     "datahub.ingestion.sink.plugins": [
         "file = datahub.ingestion.sink.file:FileSink",
