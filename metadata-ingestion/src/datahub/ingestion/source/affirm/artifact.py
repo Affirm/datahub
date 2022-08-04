@@ -24,6 +24,7 @@ yaml = YAML(typ='rt')
 
 @dataclass
 class AffirmArtifact:
+    schema_name: str
     name: str
     description: str
     owner: str
@@ -50,13 +51,19 @@ class AffirmArtifactSourceConfig(ConfigModel):
 def iterate_artifact(directory: str) -> Iterable[AffirmArtifact]:
     def fix_description(description: str):
         return ' '.join(description.split())
-    for r, _, filenames in os.walk(directory):
+    def get_schema(dir: str):
+        relative_dir = dir.replace(os.path.abspath(directory), '').strip()
+        relative_dir = relative_dir if not relative_dir.startswith(os.sep) else relative_dir[len(os.sep):]
+        relative_dir = relative_dir if not relative_dir.endswith(os.sep) else relative_dir[len(os.sep):]
+        return '.'.join(relative_dir.split(os.sep))
+    for dir, _, filenames in os.walk(directory):
         for filename in filenames:
             if filename.endswith('.yaml'):
-                filepath = os.path.join(r, filename)
+                filepath = os.path.join(dir, filename)
                 with open(filepath, 'r') as f:
                     content = yaml.load(f)
                     artifact = AffirmArtifact(
+                        schema_name=get_schema(dir),
                         name=filename.replace('.yaml', ''),
                         description=fix_description(content.get('description', '')),
                         owner=content.get('owner', ''),
@@ -101,7 +108,7 @@ class AffirmArtifactSource(Source):
         platform = self.config.platform
         env = self.config.env
         for artifact in iterate_artifact(directory):
-            dataset_name = artifact.name
+            dataset_name = f'{artifact.schema_name}.{artifact.name}' if len(artifact.schema_name) > 0 else artifact.name
             logging.info(f'> Processing dataset {dataset_name}')
             dataset_urn = builder.make_dataset_urn(platform, dataset_name, env)
             dataset_snapshot = DatasetSnapshot(
