@@ -321,8 +321,9 @@ plugins: Dict[str, Set[str]] = {
     "trino": sql_common | trino,
     "starburst-trino-usage": sql_common | usage_common | trino,
     "nifi": {"requests", "packaging"},
-    "powerbi": microsoft_common,
     "vertica": sql_common | {"sqlalchemy-vertica[vertica-python]==0.0.5"},
+    "powerbi": {"orderedset"} | microsoft_common,
+    "affirm-artifact": {"ruamel.yaml>=0.17,<0.18"}
 }
 
 all_exclude_plugins: Set[str] = {
@@ -533,6 +534,7 @@ entry_points = {
         "presto-on-hive = datahub.ingestion.source.sql.presto_on_hive:PrestoOnHiveSource",
         "pulsar = datahub.ingestion.source.pulsar:PulsarSource",
         "salesforce = datahub.ingestion.source.salesforce:SalesforceSource",
+        "affirm-artifact = datahub.ingestion.source.affirm.artifact:AffirmArtifactSource",
     ],
     "datahub.ingestion.sink.plugins": [
         "file = datahub.ingestion.sink.file:FileSink",
