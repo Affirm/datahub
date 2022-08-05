@@ -142,7 +142,7 @@ class PrivacyTermExtractor:
     def _yield_rows(cls, entity: Dict) -> Generator[Dict, None, None]:
         # Merge glossaryTerms from both schemaMetadata and editableSchemaMetadata
         merged_rows = {}
-        # schemaMetadata can be empty
+        # schemaMetadata can be empty due to the zombie issue. Let's not fail here.
         if entity["entity"]["schemaMetadata"]:
             # schemaMetadata will contain all fields
             for field in entity["entity"]["schemaMetadata"]["fields"]:
