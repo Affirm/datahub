@@ -280,3 +280,31 @@ class TestPrivacyTermExtractor(TestCase):
         )
         num_mock_fields_per_dataset = 2
         self.assertEqual(len(actual), num_mock_datasets * num_mock_fields_per_dataset)
+
+    @patch.object(requests, "post")
+    def test_yield_search_results__empty_schema_metadata(self, mock_post):
+        mock_search_results = [
+            {
+                "entity": {
+                    "schemaMetadata": None,
+                    "editableSchemaMetadata": None,
+                }
+            },
+        ]
+        response1 = MagicMock()
+        response1.json.return_value = {
+            "data": {
+                "search": {
+                    "total": len(mock_search_results),
+                    "searchResults": mock_search_results,
+                },
+            },
+        }
+        mock_post.side_effect = [response1]
+
+        expected = []
+        extractor = PrivacyTermExtractor("http://localhost:1234")
+
+        actual = list(extractor.yield_search_results(["snowflake"]))
+        mock_post.assert_called_once()
+        self.assertListEqual(expected, actual)
