@@ -6,7 +6,7 @@ from typing import Iterable, Sequence
 from ruamel.yaml import YAML
 
 import datahub.emitter.mce_builder as builder
-from datahub.configuration.common import ConfigModel
+from datahub.configuration.source_common import PlatformSourceConfigBase
 from datahub.ingestion.api.source import Source, SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.com.linkedin.pegasus2avro.mxe import MetadataChangeEvent
@@ -20,6 +20,7 @@ from datahub.metadata.schema_classes import (
 
 
 yaml = YAML(typ='rt')
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 
 @dataclass
@@ -37,14 +38,15 @@ class AffirmArtifact:
             self.privacy_entrypoint = ''
         if self.processing_purposes is None:
             self.processing_purposes = []
+        if self.schema_name is None:
+            self.schema_name = ''
 
 
-class AffirmArtifactSourceConfig(ConfigModel):
+class AffirmArtifactSourceConfig(PlatformSourceConfigBase):
     ''' TODO support git repo to automate the whole process: 
     git clone, locate artifact and ingest
     '''
     directory: str
-    platform: str
     env: str
 
 
@@ -106,11 +108,21 @@ class AffirmArtifactSource(Source):
     def get_workunits(self) -> Iterable[MetadataWorkUnit]:
         directory = self.config.directory
         platform = self.config.platform
+        platform_instance = self.config.platform_instance
         env = self.config.env
         for artifact in iterate_artifact(directory):
-            dataset_name = f'{artifact.schema_name}.{artifact.name}' if len(artifact.schema_name) > 0 else artifact.name
+            dataset_name = (
+                f'{artifact.schema_name}.{artifact.name}'
+                if len(artifact.schema_name) > 0
+                else artifact.name
+            )
             logging.info(f'> Processing dataset {dataset_name}')
-            dataset_urn = builder.make_dataset_urn(platform, dataset_name, env)
+            dataset_urn = builder.make_dataset_urn_with_platform_instance(
+                platform=platform,
+                name=dataset_name,
+                platform_instance=platform_instance,
+                env=env
+            )
             dataset_snapshot = DatasetSnapshot(
                 urn=dataset_urn,
                 aspects=[],

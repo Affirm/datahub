@@ -1,0 +1,12 @@
+source:
+    type: affirm-artifact
+    config:
+        directory: '/Users/tao.sun/tao/datahub-metadata/artifacts/3rd_party'
+        platform: 'affirm3rdParty'
+        platform_instance: ''
+        env: 'PROD'
+
+sink:
+    type: 'datahub-rest'
+    config:
+        server: 'http://localhost:8080'

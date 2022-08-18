@@ -1,0 +1,9 @@
+source:
+    type: file
+    config:
+        filename: './3rd-party.dataplatform.json'
+
+sink:
+    type: 'datahub-rest'
+    config:
+        server: 'http://localhost:8080'
