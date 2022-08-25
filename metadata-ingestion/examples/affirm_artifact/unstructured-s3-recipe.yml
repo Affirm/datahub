@@ -1,0 +1,12 @@
+source:
+    type: affirm-artifact
+    config:
+        directory: '<path-to>/datahub-metadata/artifacts/unstructured_s3'
+        platform: 's3'
+        platform_instance: 'unstructured_s3'
+        env: 'PROD'
+
+sink:
+    type: 'datahub-rest'
+    config:
+        server: 'http://localhost:8080'

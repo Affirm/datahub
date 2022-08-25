@@ -1,0 +1,11 @@
+source:
+    type: affirm-artifact
+    config:
+        directory: '<path-to>/datahub-metadata/artifacts/infra'
+        platform: 'affirmInfra'
+        env: 'PROD'
+
+sink:
+    type: 'datahub-rest'
+    config:
+        server: 'http://localhost:8080'

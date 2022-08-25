@@ -4,7 +4,6 @@ import re
 from typing import Dict, Set
 
 import pandas as pd
-import spacy
 
 from datahub.classification.privacy.privacy.api import PIIEngine
 from datahub.ingestion.api.common import RecordEnvelope
