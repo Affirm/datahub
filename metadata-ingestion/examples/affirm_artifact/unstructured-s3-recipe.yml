@@ -1,7 +1,7 @@
 source:
     type: affirm-artifact
     config:
-        directory: '/Users/tao.sun/tao/datahub-metadata/artifacts/unstructured_s3'
+        directory: '<path-to>/datahub-metadata/artifacts/unstructured_s3'
         platform: 's3'
         platform_instance: 'unstructured_s3'
         env: 'PROD'

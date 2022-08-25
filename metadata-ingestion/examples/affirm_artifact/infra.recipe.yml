@@ -1,9 +1,8 @@
 source:
     type: affirm-artifact
     config:
-        directory: '/Users/tao.sun/tao/datahub-metadata/artifacts/infra'
+        directory: '<path-to>/datahub-metadata/artifacts/infra'
         platform: 'affirmInfra'
-        platform_instance: ''
         env: 'PROD'
 
 sink:

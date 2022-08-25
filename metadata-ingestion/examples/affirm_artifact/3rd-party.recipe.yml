@@ -1,9 +1,8 @@
 source:
     type: affirm-artifact
     config:
-        directory: '/Users/tao.sun/tao/datahub-metadata/artifacts/3rd_party'
+        directory: '<path-to>/datahub-metadata/artifacts/3rd_party'
         platform: 'affirm3rdParty'
-        platform_instance: ''
         env: 'PROD'
 
 sink:
