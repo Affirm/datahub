@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-partner_api-chrono-v1-1.MerchantCreatesCampaign: affirm.partner_api.chrono.v1.MerchantCreatesCampaign}
+    topic_patterns:
+      allow: [^affirm-partner_api-chrono-v1-1.MerchantCreatesCampaign$]
+    topic_subject_map: {affirm-partner_api-chrono-v1-1.MerchantCreatesCampaign-value: partner_api/chrono_idol/v1/events.proto}
+  type: kafka

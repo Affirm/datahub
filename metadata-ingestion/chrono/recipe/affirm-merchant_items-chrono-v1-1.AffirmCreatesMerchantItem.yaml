@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItem: affirm.merchant_items.chrono.v1.AffirmCreatesMerchantItem}
+    topic_patterns:
+      allow: [^affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItem$]
+    topic_subject_map: {affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItem-value: merchant_items/chrono_idol/v1/events.proto}
+  type: kafka

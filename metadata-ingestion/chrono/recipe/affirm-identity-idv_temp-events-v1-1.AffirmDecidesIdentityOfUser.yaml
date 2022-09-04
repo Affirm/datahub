@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-identity-idv_temp-events-v1-1.AffirmDecidesIdentityOfUser: affirm.identity.idv_temp.events.v1__1.AffirmDecidesIdentityOfUser}
+    topic_patterns:
+      allow: [^affirm-identity-idv_temp-events-v1-1.AffirmDecidesIdentityOfUser$]
+    topic_subject_map: {affirm-identity-idv_temp-events-v1-1.AffirmDecidesIdentityOfUser-value: identity/idv_temp/events_idol/v1/chrono_events.proto}
+  type: kafka

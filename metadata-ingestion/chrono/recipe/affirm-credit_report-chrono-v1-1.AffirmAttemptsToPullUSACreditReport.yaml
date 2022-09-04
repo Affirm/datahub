@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-credit_report-chrono-v1-1.AffirmAttemptsToPullUSACreditReport: affirm.credit_report.chrono.v1__1.AffirmAttemptsToPullUSACreditReport}
+    topic_patterns:
+      allow: [^affirm-credit_report-chrono-v1-1.AffirmAttemptsToPullUSACreditReport$]
+    topic_subject_map: {affirm-credit_report-chrono-v1-1.AffirmAttemptsToPullUSACreditReport-value: credit_report/chrono_idol/v1/events.proto}
+  type: kafka

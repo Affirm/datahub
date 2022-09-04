@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-event_bus2-idol-fraud-v1-1.UserCompletesSelfServicePhoneChange: affirm.event_bus2.idol.fraud.v1.UserCompletesSelfServicePhoneChange}
+    topic_patterns:
+      allow: [^affirm-event_bus2-idol-fraud-v1-1.UserCompletesSelfServicePhoneChange$]
+    topic_subject_map: {affirm-event_bus2-idol-fraud-v1-1.UserCompletesSelfServicePhoneChange-value: event_bus2/idol/fraud_idol/v1/events.proto}
+  type: kafka

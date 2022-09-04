@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-items-chrono-v1-1.UserCreatesCheckoutItem: affirm.items.chrono.v1.UserCreatesCheckoutItem}
+    topic_patterns:
+      allow: [^affirm-items-chrono-v1-1.UserCreatesCheckoutItem$]
+    topic_subject_map: {affirm-items-chrono-v1-1.UserCreatesCheckoutItem-value: items/chrono_idol/v1/events.proto}
+  type: kafka

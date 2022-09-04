@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-investigations-chrono-v1-1.AffirmSetsAccountCompromised: affirm.investigations.chrono.v1.AffirmSetsAccountCompromised}
+    topic_patterns:
+      allow: [^affirm-investigations-chrono-v1-1.AffirmSetsAccountCompromised$]
+    topic_subject_map: {affirm-investigations-chrono-v1-1.AffirmSetsAccountCompromised-value: investigations/chrono_idol/v1/events.proto}
+  type: kafka

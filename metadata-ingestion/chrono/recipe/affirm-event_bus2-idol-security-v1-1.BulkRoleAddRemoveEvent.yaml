@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-event_bus2-idol-security-v1-1.BulkRoleAddRemoveEvent: affirm.event_bus2.idol.security.v1.BulkRoleAddRemoveEvent}
+    topic_patterns:
+      allow: [^affirm-event_bus2-idol-security-v1-1.BulkRoleAddRemoveEvent$]
+    topic_subject_map: {affirm-event_bus2-idol-security-v1-1.BulkRoleAddRemoveEvent-value: event_bus2/idol/security_idol/v1/models.proto}
+  type: kafka

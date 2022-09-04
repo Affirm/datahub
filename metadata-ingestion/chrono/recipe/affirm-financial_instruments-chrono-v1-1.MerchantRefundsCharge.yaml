@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-financial_instruments-chrono-v1-1.MerchantRefundsCharge: affirm.financial_instruments.chrono.v1.MerchantRefundsCharge}
+    topic_patterns:
+      allow: [^affirm-financial_instruments-chrono-v1-1.MerchantRefundsCharge$]
+    topic_subject_map: {affirm-financial_instruments-chrono-v1-1.MerchantRefundsCharge-value: financial_instruments/chrono_idol/v1/charge_events.proto}
+  type: kafka

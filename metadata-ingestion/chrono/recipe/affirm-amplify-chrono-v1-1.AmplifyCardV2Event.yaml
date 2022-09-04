@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-amplify-chrono-v1-1.AmplifyCardV2Event: affirm.amplify.chrono.v1.AmplifyCardV2Event}
+    topic_patterns:
+      allow: [^affirm-amplify-chrono-v1-1.AmplifyCardV2Event$]
+    topic_subject_map: {affirm-amplify-chrono-v1-1.AmplifyCardV2Event-value: amplify/chrono_idol/v1/events.proto}
+  type: kafka

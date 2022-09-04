@@ -1,0 +1,14 @@
+source:
+  type: "kafka"
+  config:
+    platform_instance: "chrono"
+    connection:
+      bootstrap: "localhost:9092"
+    topic_patterns:
+      allow:
+    topic_subject_map:
+
+sink:
+  type: "datahub-rest"
+  config:
+    server: "http://localhost:8080"

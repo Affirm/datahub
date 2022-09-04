@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-credit_report-chrono-v1-1.AffirmPullsUSACreditReportInquiry: affirm.credit_report.chrono.v1__1.AffirmPullsUSACreditReportInquiry}
+    topic_patterns:
+      allow: [^affirm-credit_report-chrono-v1-1.AffirmPullsUSACreditReportInquiry$]
+    topic_subject_map: {affirm-credit_report-chrono-v1-1.AffirmPullsUSACreditReportInquiry-value: credit_report/chrono_idol/v1/events.proto}
+  type: kafka

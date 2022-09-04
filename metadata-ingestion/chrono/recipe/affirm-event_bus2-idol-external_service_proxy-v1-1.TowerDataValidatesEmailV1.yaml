@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-event_bus2-idol-external_service_proxy-v1-1.TowerDataValidatesEmailV1: affirm.event_bus2.idol.external_service_proxy.v1.TowerDataValidatesEmailV1}
+    topic_patterns:
+      allow: [^affirm-event_bus2-idol-external_service_proxy-v1-1.TowerDataValidatesEmailV1$]
+    topic_subject_map: {affirm-event_bus2-idol-external_service_proxy-v1-1.TowerDataValidatesEmailV1-value: shared_idol/external_service_proxy/v1/events.proto}
+  type: kafka

@@ -20,8 +20,9 @@ from typing import (
     cast,
 )
 
+import importlib
 import grpc
-import grpc.experimental
+#import grpc.experimental
 import networkx as nx
 from google.protobuf.descriptor import (
     Descriptor,
@@ -65,6 +66,7 @@ def protobuf_schema_to_mce_fields(
     main_schema: ProtobufSchema,
     imported_schemas: Optional[List[ProtobufSchema]] = None,
     is_key_schema: bool = False,
+    message_name: str = None
 ) -> List[SchemaField]:
     """
     Converts a protobuf schema into a schema compatible with MCE
@@ -75,7 +77,8 @@ def protobuf_schema_to_mce_fields(
     descriptor: FileDescriptor = _from_protobuf_schema_to_descriptors(
         main_schema, imported_schemas
     )
-    graph: nx.DiGraph = _populate_graph(descriptor)
+
+    graph: nx.DiGraph = _populate_graph(descriptor, message_name)
 
     if nx.is_directed_acyclic_graph(graph):
         return _schema_fields_from_dag(graph, is_key_schema)
@@ -238,6 +241,7 @@ def _from_protobuf_schema_to_descriptors(
     if imported_schemas is None:
         imported_schemas = []
     imported_schemas.insert(0, main_schema)
+    importlib.reload(grpc)
     with TemporaryDirectory() as tmpdir, _add_sys_path(tmpdir):
         for schema in imported_schemas:  # type: ProtobufSchema
             #
@@ -335,12 +339,14 @@ def _get_type_ascription(descriptor: DescriptorBase) -> str:
     return ".".join(return_list)
 
 
-def _populate_graph(descriptor: FileDescriptor) -> nx.DiGraph:
+def _populate_graph(descriptor: FileDescriptor, message_name: str) -> nx.DiGraph:
     graph = nx.DiGraph()
     visited: Set[str] = set()
 
     for message in descriptor.message_types_by_name.values():
-        _add_message(graph, message, visited)
+        _message_name = _get_node_name(message)
+        if _message_name == message_name:
+            _add_message(graph, message, visited)
 
     return graph
 

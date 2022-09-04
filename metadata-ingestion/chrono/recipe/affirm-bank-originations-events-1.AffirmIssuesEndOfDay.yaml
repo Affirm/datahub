@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-bank-originations-events-1.AffirmIssuesEndOfDay: affirm.bank.originations.events.AffirmIssuesEndOfDay}
+    topic_patterns:
+      allow: [^affirm-bank-originations-events-1.AffirmIssuesEndOfDay$]
+    topic_subject_map: {affirm-bank-originations-events-1.AffirmIssuesEndOfDay-value: bank/originations/events_idol/v1/events.proto}
+  type: kafka

@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-event_bus2-idol-fe_analytics-v1-1.UserInteractsWWWEditorialContentMetadata: affirm.event_bus2.idol.fe_analytics.v1.UserInteractsWWWEditorialContentMetadata}
+    topic_patterns:
+      allow: [^affirm-event_bus2-idol-fe_analytics-v1-1.UserInteractsWWWEditorialContentMetadata$]
+    topic_subject_map: {affirm-event_bus2-idol-fe_analytics-v1-1.UserInteractsWWWEditorialContentMetadata-value: shared_idol/fe_analytics/v1/events.proto}
+  type: kafka

@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-axp-assignments-chrono-v1-1.AXPMakesAssignment: affirm.axp.assignments.chrono.v1.AXPMakesAssignment}
+    topic_patterns:
+      allow: [^affirm-axp-assignments-chrono-v1-1.AXPMakesAssignment$]
+    topic_subject_map: {affirm-axp-assignments-chrono-v1-1.AXPMakesAssignment-value: axp/assignments/chrono_idol/v1/assignment_impression_events.proto}
+  type: kafka

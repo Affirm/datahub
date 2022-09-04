@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-marketplace-shop-chrono_events-v1-1.AffirmCreatesAlpacaMetadata: affirm.marketplace.shop.chrono_events.v1__1.AffirmCreatesAlpacaMetadata}
+    topic_patterns:
+      allow: [^affirm-marketplace-shop-chrono_events-v1-1.AffirmCreatesAlpacaMetadata$]
+    topic_subject_map: {affirm-marketplace-shop-chrono_events-v1-1.AffirmCreatesAlpacaMetadata-value: marketplace/shop/chrono_events_idol/v1/events.proto}
+  type: kafka

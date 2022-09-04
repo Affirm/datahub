@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-bank-originations-events-1.AffirmReversesOrigination: affirm.bank.originations.events.AffirmReversesOrigination}
+    topic_patterns:
+      allow: [^affirm-bank-originations-events-1.AffirmReversesOrigination$]
+    topic_subject_map: {affirm-bank-originations-events-1.AffirmReversesOrigination-value: bank/originations/events_idol/v1/events.proto}
+  type: kafka

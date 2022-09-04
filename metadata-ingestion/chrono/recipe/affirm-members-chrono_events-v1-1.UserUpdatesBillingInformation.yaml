@@ -1,0 +1,12 @@
+sink:
+  config: {server: 'http://localhost:8080'}
+  type: datahub-rest
+source:
+  config:
+    connection: {bootstrap: 'localhost:9092'}
+    platform_instance: chrono
+    topic_message_map: {affirm-members-chrono_events-v1-1.UserUpdatesBillingInformation: affirm.members.chrono_events.v1__1.UserUpdatesBillingInformation}
+    topic_patterns:
+      allow: [^affirm-members-chrono_events-v1-1.UserUpdatesBillingInformation$]
+    topic_subject_map: {affirm-members-chrono_events-v1-1.UserUpdatesBillingInformation-value: members/idol/chrono_events/v1/models.proto}
+  type: kafka
