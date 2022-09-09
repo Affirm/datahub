@@ -30,7 +30,6 @@ RUN cd /datahub-ingestion && \
     python -m spacy download en_core_web_sm && \
     pip freeze
 
-COPY privacy_type_mapping.csv /data/privacy_type_mapping.csv
 FROM base as dev-install
 # Dummy stage for development. Assumes code is built on your machine and mounted to this image.
 # See this excellent thread https://github.com/docker/cli/issues/1134
