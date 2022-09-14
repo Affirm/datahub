@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-fe_analytics-v1-1.UserViewsPaymentInitiatedPageMetadata: affirm.event_bus2.idol.fe_analytics.v1.UserViewsPaymentInitiatedPageMetadata}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-fe_analytics-v1-1.UserViewsPaymentInitiatedPageMetadata$]
     topic_subject_map: {affirm-event_bus2-idol-fe_analytics-v1-1.UserViewsPaymentInitiatedPageMetadata-value: shared_idol/fe_analytics/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

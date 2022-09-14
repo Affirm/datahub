@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-fraud-chrono_events-v1-1.AffirmDecidesFraud: affirm.fraud.chrono_events.v1__1.AffirmDecidesFraud}
     topic_patterns:
       allow: [^affirm-fraud-chrono_events-v1-1.AffirmDecidesFraud$]
     topic_subject_map: {affirm-fraud-chrono_events-v1-1.AffirmDecidesFraud-value: fraud/chrono_events_idol/v1/models.proto}
+    dataset_prefix: chrono
   type: kafka

@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-challenge-v1-1.OnfidoCheckV1: affirm.event_bus2.idol.challenge.v1.OnfidoCheckV1}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-challenge-v1-1.OnfidoCheckV1$]
     topic_subject_map: {affirm-event_bus2-idol-challenge-v1-1.OnfidoCheckV1-value: shared_idol/challenge/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-marketplace-items-chrono_events-v1-1.AffirmCreatesMarketplaceItem: affirm.marketplace.items.chrono_events.v1__1.AffirmCreatesMarketplaceItem}
     topic_patterns:
       allow: [^affirm-marketplace-items-chrono_events-v1-1.AffirmCreatesMarketplaceItem$]
     topic_subject_map: {affirm-marketplace-items-chrono_events-v1-1.AffirmCreatesMarketplaceItem-value: marketplace/items/chrono_events_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

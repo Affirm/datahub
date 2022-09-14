@@ -1,7 +1,7 @@
 source:
   type: "kafka"
   config:
-    platform_instance: "chrono"
+    dataset_prefix: "chrono"
     connection:
       bootstrap: "localhost:9092"
     topic_patterns:

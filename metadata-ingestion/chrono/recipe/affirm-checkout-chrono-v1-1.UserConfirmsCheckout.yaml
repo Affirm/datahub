@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-checkout-chrono-v1-1.UserConfirmsCheckout: affirm.checkout.chrono.v1.UserConfirmsCheckout}
     topic_patterns:
       allow: [^affirm-checkout-chrono-v1-1.UserConfirmsCheckout$]
     topic_subject_map: {affirm-checkout-chrono-v1-1.UserConfirmsCheckout-value: checkout/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

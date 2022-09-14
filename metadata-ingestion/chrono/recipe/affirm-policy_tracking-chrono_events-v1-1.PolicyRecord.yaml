@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-policy_tracking-chrono_events-v1-1.PolicyRecord: affirm.policy_tracking.chrono_events.v1__1.PolicyRecord}
     topic_patterns:
       allow: [^affirm-policy_tracking-chrono_events-v1-1.PolicyRecord$]
     topic_subject_map: {affirm-policy_tracking-chrono_events-v1-1.PolicyRecord-value: policy_tracking/chrono_events_idol/v1/models.proto}
+    dataset_prefix: chrono
   type: kafka

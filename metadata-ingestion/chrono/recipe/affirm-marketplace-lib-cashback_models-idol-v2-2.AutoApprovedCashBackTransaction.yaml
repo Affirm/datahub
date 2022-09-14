@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-marketplace-lib-cashback_models-idol-v2-2.AutoApprovedCashBackTransaction: affirm.marketplace.lib.cashback_models.idol.v2.AutoApprovedCashBackTransaction}
     topic_patterns:
       allow: [^affirm-marketplace-lib-cashback_models-idol-v2-2.AutoApprovedCashBackTransaction$]
     topic_subject_map: {affirm-marketplace-lib-cashback_models-idol-v2-2.AutoApprovedCashBackTransaction-value: marketplace/lib/cashback_models_idol/v2/cashback.proto}
+    dataset_prefix: chrono
   type: kafka

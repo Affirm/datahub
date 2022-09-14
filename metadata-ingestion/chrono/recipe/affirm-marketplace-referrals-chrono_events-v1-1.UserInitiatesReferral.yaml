@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-marketplace-referrals-chrono_events-v1-1.UserInitiatesReferral: affirm.marketplace.referrals.chrono_events.v1__1.UserInitiatesReferral}
     topic_patterns:
       allow: [^affirm-marketplace-referrals-chrono_events-v1-1.UserInitiatesReferral$]
     topic_subject_map: {affirm-marketplace-referrals-chrono_events-v1-1.UserInitiatesReferral-value: marketplace/referrals/chrono_events_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

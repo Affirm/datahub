@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-counters2-v1-1.AffirmCountsEvent: affirm.event_bus2.idol.counters2.v1.AffirmCountsEvent}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-counters2-v1-1.AffirmCountsEvent$]
     topic_subject_map: {affirm-event_bus2-idol-counters2-v1-1.AffirmCountsEvent-value: shared_idol/counters2/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

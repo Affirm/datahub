@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-offers-v1-1.AutomatedPublisherFailsForOffer: affirm.event_bus2.idol.offers.v1.AutomatedPublisherFailsForOffer}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-offers-v1-1.AutomatedPublisherFailsForOffer$]
     topic_subject_map: {affirm-event_bus2-idol-offers-v1-1.AutomatedPublisherFailsForOffer-value: event_bus2/idol/offers_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

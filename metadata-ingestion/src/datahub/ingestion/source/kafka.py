@@ -78,6 +78,7 @@ class KafkaSourceConfig(StatefulIngestionConfigBase, DatasetSourceConfigBase):
         default_factory=dict,
         description="Provices the mapping for the topic to the corresponding schema fqdn (message) in hte schema registry"
     )
+    dataset_prefix: Optional[str] = None
     # Custom Stateful Ingestion settings
     stateful_ingestion: Optional[KafkaSourceStatefulIngestionConfig] = None
     schema_registry_class: str = pydantic.Field(
@@ -258,10 +259,13 @@ class KafkaSource(StatefulIngestionSourceBase):
         )
         if cur_checkpoint is not None:
             checkpoint_state = cast(KafkaCheckpointState, cur_checkpoint.state)
+            name = topic
+            if self.config.dataset_prefix:
+                name = f"{self.config.dataset_prefix}.{topic}"
             checkpoint_state.add_topic_urn(
                 make_dataset_urn_with_platform_instance(
                     platform=self.platform,
-                    name=topic,
+                    name=name,
                     platform_instance=self.source_config.platform_instance,
                     env=self.source_config.env,
                 )
@@ -272,6 +276,8 @@ class KafkaSource(StatefulIngestionSourceBase):
 
         # 1. Create the default dataset snapshot for the topic.
         dataset_name = topic
+        if self.config.dataset_prefix:
+            dataset_name = f"{self.config.dataset_prefix}.{topic}"
         platform_urn = make_data_platform_urn(self.platform)
         dataset_urn = make_dataset_urn_with_platform_instance(
             platform=self.platform,

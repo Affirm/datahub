@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-user_flow-v1-1.AffirmCompletesIdentityDataFetch: affirm.event_bus2.idol.user_flow.v1.AffirmCompletesIdentityDataFetch}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-user_flow-v1-1.AffirmCompletesIdentityDataFetch$]
     topic_subject_map: {affirm-event_bus2-idol-user_flow-v1-1.AffirmCompletesIdentityDataFetch-value: shared_idol/user_flow/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

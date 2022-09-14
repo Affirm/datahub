@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-investigations-chrono-v1-1.AffirmLabelsCharge: affirm.investigations.chrono.v1.AffirmLabelsCharge}
     topic_patterns:
       allow: [^affirm-investigations-chrono-v1-1.AffirmLabelsCharge$]
     topic_subject_map: {affirm-investigations-chrono-v1-1.AffirmLabelsCharge-value: investigations/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

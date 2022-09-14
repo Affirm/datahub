@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-security-v1-1.BulkRoleSetEvent: affirm.event_bus2.idol.security.v1.BulkRoleSetEvent}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-security-v1-1.BulkRoleSetEvent$]
     topic_subject_map: {affirm-event_bus2-idol-security-v1-1.BulkRoleSetEvent-value: event_bus2/idol/security_idol/v1/models.proto}
+    dataset_prefix: chrono
   type: kafka

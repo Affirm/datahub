@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {applications2-events-rodi-v1-1.AffirmUnderwritesUser: applications2.events.rodi.v1.AffirmUnderwritesUser}
     topic_patterns:
       allow: [^applications2-events-rodi-v1-1.AffirmUnderwritesUser$]
     topic_subject_map: {applications2-events-rodi-v1-1.AffirmUnderwritesUser-value: applications2/events_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

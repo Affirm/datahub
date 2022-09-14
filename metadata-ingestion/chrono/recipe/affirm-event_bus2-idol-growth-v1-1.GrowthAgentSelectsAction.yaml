@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-growth-v1-1.GrowthAgentSelectsAction: affirm.event_bus2.idol.growth.v1.GrowthAgentSelectsAction}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-growth-v1-1.GrowthAgentSelectsAction$]
     topic_subject_map: {affirm-event_bus2-idol-growth-v1-1.GrowthAgentSelectsAction-value: event_bus2/idol/growth_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

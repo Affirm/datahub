@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-event_bus2-idol-transfers-v1-1.UserPaymentFails: affirm.transfers.chrono.v1__1.UserPaymentFails}
     topic_patterns:
       allow: [^affirm-event_bus2-idol-transfers-v1-1.UserPaymentFails$]
     topic_subject_map: {affirm-event_bus2-idol-transfers-v1-1.UserPaymentFails-value: transfers/chrono_idol/v1/models.proto}
+    dataset_prefix: chrono
   type: kafka

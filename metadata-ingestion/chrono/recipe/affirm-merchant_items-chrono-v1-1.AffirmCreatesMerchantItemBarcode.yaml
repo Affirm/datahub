@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItemBarcode: affirm.merchant_items.chrono.v1.AffirmCreatesMerchantItemBarcode}
     topic_patterns:
       allow: [^affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItemBarcode$]
     topic_subject_map: {affirm-merchant_items-chrono-v1-1.AffirmCreatesMerchantItemBarcode-value: merchant_items/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

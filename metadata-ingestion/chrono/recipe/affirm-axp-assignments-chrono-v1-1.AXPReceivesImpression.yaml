@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-axp-assignments-chrono-v1-1.AXPReceivesImpression: affirm.axp.assignments.chrono.v1.AXPReceivesImpression}
     topic_patterns:
       allow: [^affirm-axp-assignments-chrono-v1-1.AXPReceivesImpression$]
     topic_subject_map: {affirm-axp-assignments-chrono-v1-1.AXPReceivesImpression-value: axp/assignments/chrono_idol/v1/assignment_impression_events.proto}
+    dataset_prefix: chrono
   type: kafka

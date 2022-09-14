@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-trainyard2-chrono-v1-1.TrainyardCompletesRequest: affirm.trainyard2.chrono.v1.TrainyardCompletesRequest}
     topic_patterns:
       allow: [^affirm-trainyard2-chrono-v1-1.TrainyardCompletesRequest$]
     topic_subject_map: {affirm-trainyard2-chrono-v1-1.TrainyardCompletesRequest-value: trainyard2/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

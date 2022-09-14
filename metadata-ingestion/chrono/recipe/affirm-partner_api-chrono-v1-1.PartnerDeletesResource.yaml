@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-partner_api-chrono-v1-1.PartnerDeletesResource: affirm.partner_api.chrono.v1.PartnerDeletesResource}
     topic_patterns:
       allow: [^affirm-partner_api-chrono-v1-1.PartnerDeletesResource$]
     topic_subject_map: {affirm-partner_api-chrono-v1-1.PartnerDeletesResource-value: partner_api/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-ml2-serving-chrono-v1-1.MlLogsModelRunTemp: affirm.ml2.serving.chrono.v1.MlLogsModelRunTemp}
     topic_patterns:
       allow: [^affirm-ml2-serving-chrono-v1-1.MlLogsModelRunTemp$]
     topic_subject_map: {affirm-ml2-serving-chrono-v1-1.MlLogsModelRunTemp-value: ml2/serving/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

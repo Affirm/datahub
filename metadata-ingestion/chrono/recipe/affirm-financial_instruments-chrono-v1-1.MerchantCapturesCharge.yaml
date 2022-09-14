@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-financial_instruments-chrono-v1-1.MerchantCapturesCharge: affirm.financial_instruments.chrono.v1.MerchantCapturesCharge}
     topic_patterns:
       allow: [^affirm-financial_instruments-chrono-v1-1.MerchantCapturesCharge$]
     topic_subject_map: {affirm-financial_instruments-chrono-v1-1.MerchantCapturesCharge-value: financial_instruments/chrono_idol/v1/charge_events.proto}
+    dataset_prefix: chrono
   type: kafka

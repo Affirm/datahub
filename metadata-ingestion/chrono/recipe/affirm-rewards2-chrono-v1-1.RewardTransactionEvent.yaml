@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-rewards2-chrono-v1-1.RewardTransactionEvent: affirm.rewards2.chrono.v1.RewardTransactionEvent}
     topic_patterns:
       allow: [^affirm-rewards2-chrono-v1-1.RewardTransactionEvent$]
     topic_subject_map: {affirm-rewards2-chrono-v1-1.RewardTransactionEvent-value: rewards2/chrono_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka

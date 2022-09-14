@@ -4,9 +4,9 @@ sink:
 source:
   config:
     connection: {bootstrap: 'localhost:9092'}
-    platform_instance: chrono
     topic_message_map: {affirm-bank-originations-events-1.AffirmReversesRejection: affirm.bank.originations.events.AffirmReversesRejection}
     topic_patterns:
       allow: [^affirm-bank-originations-events-1.AffirmReversesRejection$]
     topic_subject_map: {affirm-bank-originations-events-1.AffirmReversesRejection-value: bank/originations/events_idol/v1/events.proto}
+    dataset_prefix: chrono
   type: kafka
