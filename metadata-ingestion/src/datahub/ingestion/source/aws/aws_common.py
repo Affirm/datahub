@@ -200,6 +200,12 @@ class AwsConnectionConfig(ConfigModel):
     def get_sagemaker_client(self) -> "SageMakerClient":
         return self.get_session().client("sagemaker")
 
+    def get_dynamodb_client(self) -> "DynamoDBClient":
+        return self.get_session().client("dynamodb")
+
+    def get_dynamodbstreams_client(self) -> "DynamoDBStreamsClient":
+        return self.get_session().client("dynamodbstreams")
+
 
 class AwsSourceConfig(EnvConfigMixin, AwsConnectionConfig):
     """
