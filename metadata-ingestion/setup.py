@@ -533,6 +533,7 @@ entry_points = {
         "presto-on-hive = datahub.ingestion.source.sql.presto_on_hive:PrestoOnHiveSource",
         "pulsar = datahub.ingestion.source.pulsar:PulsarSource",
         "salesforce = datahub.ingestion.source.salesforce:SalesforceSource",
+        "dynamodb = datahub.ingestion.source.aws.dynamodb:DynamoDBSource",
         "affirm-artifact = datahub.ingestion.source.affirm.artifact:AffirmArtifactSource",
     ],
     "datahub.ingestion.sink.plugins": [
