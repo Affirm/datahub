@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 import datahub as datahub_package
 from datahub.cli.check_cli import check
-from datahub.cli.classify_cli import classify
 from datahub.cli.cli_utils import DATAHUB_CONFIG_PATH, write_datahub_config
 from datahub.cli.delete_cli import delete
 from datahub.cli.docker import docker
@@ -126,7 +125,6 @@ def init() -> None:
 
 
 datahub.add_command(check)
-datahub.add_command(classify)
 datahub.add_command(delete)
 datahub.add_command(docker)
 datahub.add_command(generate_report)
