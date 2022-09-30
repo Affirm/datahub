@@ -1,5 +1,0 @@
-nose-timer
-nosexcover
-commonregex
-nltk
-mypy
