@@ -61,17 +61,6 @@ framework_common = {
     "click-spinner",
 }
 
-classify = {
-  "pandas",
-  "nose-timer",
-  "nosexcover",
-  "commonregex",
-  "nltk",
-  "spacy",
-  "mypy",
-  "requests"
-}
-
 kafka_common = {
     # The confluent_kafka package provides a number of pre-built wheels for
     # various platforms and architectures. However, it does not provide wheels
@@ -237,7 +226,6 @@ plugins: Dict[str, Set[str]] = {
     | {"sqlalchemy-bigquery>=1.4.1", "sqllineage==1.3.5", "sqlparse"},
     "bigquery-usage": bigquery_common | usage_common | {"cachetools"},
     "bigquery-beta": bigquery_common | {"sql_metadata"},
-    "classify": classify,
     "clickhouse": sql_common | {"clickhouse-sqlalchemy==0.1.8"},
     "clickhouse-usage": sql_common
     | usage_common
