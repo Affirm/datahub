@@ -140,7 +140,6 @@ def init() -> None:
 
 
 datahub.add_command(check)
-datahub.add_command(classify)
 datahub.add_command(delete)
 datahub.add_command(docker)
 datahub.add_command(generate_report)
