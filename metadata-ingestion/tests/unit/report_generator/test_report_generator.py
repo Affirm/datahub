@@ -316,3 +316,12 @@ class TestPrivacyTermExtractor(TestCase):
         actual = list(extractor.yield_search_results(["snowflake"]))
         mock_post.assert_called_once()
         self.assertListEqual(expected, actual)
+
+    @patch.dict(os.environ, {"TOKEN": "hello"})
+    def test_token_from_env_var(self):
+        extractor = PrivacyTermExtractor("http://localhost:1234", "${TOKEN}")
+        self.assertEqual(extractor.datahub_token, "hello")
+
+    def test_missing_env_var_raises_exception(self):
+        with self.assertRaises(ValueError):
+            extractor = PrivacyTermExtractor("http://localhost:1234", "${TOKEN}")

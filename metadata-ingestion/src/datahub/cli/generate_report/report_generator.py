@@ -3,6 +3,7 @@ import datetime
 import itertools
 import logging
 import os
+import re
 import tempfile
 from typing import Any, BinaryIO, Dict, Generator, Iterable, TextIO
 
@@ -102,7 +103,18 @@ class PrivacyTermExtractor:
         self, datahub_base_url: str, datahub_token: str, search_query_page_size: int = 500
     ) -> None:
         self.graphql_api_url = f"{datahub_base_url}{self.DATAHUB_GRAPHQL_ENDPOINT}"
-        self.datahub_token = datahub_token
+
+        env_match = re.match("^\$\{(.*)\}$", datahub_token)
+        if env_match:
+            var = env_match.group(1)
+            token = os.environ.get(var)
+            if token:
+                self.datahub_token = token
+            else:
+                raise ValueError(f"Environment variable {var} does not exist")
+        else:
+            self.datahub_token = datahub_token
+
         self.search_query_page_size = search_query_page_size
 
     def yield_search_results(
