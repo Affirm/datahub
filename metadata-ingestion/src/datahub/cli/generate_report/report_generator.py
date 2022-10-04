@@ -27,7 +27,7 @@ class ReportGenerator:
         self.config = config
 
     def generate(self) -> int:
-        extractor = PrivacyTermExtractor(self.config.datahub_base_url)
+        extractor = PrivacyTermExtractor(self.config.datahub_base_url, self.config.datahub_token)
         rows = extractor.yield_search_results(self.config.search_queries)
         with tempfile.NamedTemporaryFile("w") as tmp_file:
             output_writer = OutputWriter(self.config.output.format, tmp_file)
@@ -95,12 +95,14 @@ class PrivacyTermExtractor:
     }
     """
     graphql_api_url: str
+    datahub_token: str
     search_query_page_size: int = 500
 
     def __init__(
-        self, datahub_base_url: str, search_query_page_size: int = 500
+        self, datahub_base_url: str, datahub_token: str, search_query_page_size: int = 500
     ) -> None:
         self.graphql_api_url = f"{datahub_base_url}{self.DATAHUB_GRAPHQL_ENDPOINT}"
+        self.datahub_token = datahub_token
         self.search_query_page_size = search_query_page_size
 
     def yield_search_results(
@@ -125,8 +127,9 @@ class PrivacyTermExtractor:
             }
             logger.info(f"Issuing graphql query with variables: {graphql_variables}")
 
+            headers = {"Authorization": f"Bearer {self.datahub_token}"}
             payload = {"query": self.GRAPHQL_QUERY, "variables": graphql_variables}
-            response = requests.post(self.graphql_api_url, json=payload)
+            response = requests.post(self.graphql_api_url, headers=headers, json=payload)
             response.raise_for_status()
             response_json = response.json()
 

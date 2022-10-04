@@ -30,6 +30,7 @@ class Output(ConfigModel):
 
 class GenerateReportConfig(ConfigModel):
     datahub_base_url: str
+    datahub_token: str
     # Search query strings for https://datahubproject.io/docs/graphql/queries#search
     search_queries: List[str]
     # Page size to use for the graphql query when fetching search results
