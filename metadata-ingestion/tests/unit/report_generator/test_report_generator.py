@@ -19,6 +19,7 @@ class TestReportGenerator(TestCase):
         self.tmp_output_file = tempfile.NamedTemporaryFile()
         self.config = {
             "datahub_base_url": "http://localhost:1234",
+            "datahub_token": "TOKEN",
             "search_queries": ["*"],
             "output": {
                 "format": "csv",
@@ -72,10 +73,11 @@ class TestReportGenerator(TestCase):
         rg.generate()
 
         mock_privacy_term_extractor_class.assert_called_once_with(
-            self.config["datahub_base_url"]
+            self.config["datahub_base_url"],
+            self.config["datahub_token"],
         )
         mock_extractor.yield_search_results_assert_called_once_with(
-            self.config["search_queries"]
+            self.config["search_queries"],
         )
 
         with open(os.path.join(FIXTURES_PATH, "expected_basic.csv"), "rb") as f:
@@ -203,7 +205,7 @@ class TestPrivacyTermExtractor(TestCase):
                 "privacy_law": [],
             },
         ]
-        extractor = PrivacyTermExtractor("http://localhost:1234")
+        extractor = PrivacyTermExtractor("http://localhost:1234", "TOKEN")
 
         actual = list(extractor.yield_search_results(["snowflake"]))
         mock_post.assert_called_once()
@@ -249,13 +251,16 @@ class TestPrivacyTermExtractor(TestCase):
         mock_post.side_effect = [response1, response2]
 
         extractor = PrivacyTermExtractor(
-            "http://localhost:1234", search_query_page_size=10
+            "http://localhost:1234", "TOKEN", search_query_page_size=10
         )
         actual = list(extractor.yield_search_results(["snowflake"]))
         mock_post.assert_has_calls(
             [
                 call(
                     "http://localhost:1234/api/graphql",
+                    headers={
+                        "Authorization": "Bearer TOKEN",
+                    },
                     json={
                         "query": extractor.GRAPHQL_QUERY,
                         "variables": {
@@ -267,6 +272,9 @@ class TestPrivacyTermExtractor(TestCase):
                 ),
                 call(
                     "http://localhost:1234/api/graphql",
+                    headers={
+                        "Authorization": "Bearer TOKEN",
+                    },
                     json={
                         "query": extractor.GRAPHQL_QUERY,
                         "variables": {
@@ -303,7 +311,7 @@ class TestPrivacyTermExtractor(TestCase):
         mock_post.side_effect = [response1]
 
         expected = []
-        extractor = PrivacyTermExtractor("http://localhost:1234")
+        extractor = PrivacyTermExtractor("http://localhost:1234", "TOKEN")
 
         actual = list(extractor.yield_search_results(["snowflake"]))
         mock_post.assert_called_once()
