@@ -73,10 +73,11 @@ class TestReportGenerator(TestCase):
         rg.generate()
 
         mock_privacy_term_extractor_class.assert_called_once_with(
-            self.config["datahub_base_url"], self.config["datahub_token"]
+            self.config["datahub_base_url"],
+            self.config["datahub_token"],
         )
         mock_extractor.yield_search_results_assert_called_once_with(
-            self.config["search_queries"]
+            self.config["search_queries"],
         )
 
         with open(os.path.join(FIXTURES_PATH, "expected_basic.csv"), "rb") as f:
@@ -258,7 +259,7 @@ class TestPrivacyTermExtractor(TestCase):
                 call(
                     "http://localhost:1234/api/graphql",
                     headers={
-                        "Authorization": "Bearer TOKEN"
+                        "Authorization": "Bearer TOKEN",
                     },
                     json={
                         "query": extractor.GRAPHQL_QUERY,
@@ -272,7 +273,7 @@ class TestPrivacyTermExtractor(TestCase):
                 call(
                     "http://localhost:1234/api/graphql",
                     headers={
-                        "Authorization": "Bearer TOKEN"
+                        "Authorization": "Bearer TOKEN",
                     },
                     json={
                         "query": extractor.GRAPHQL_QUERY,
