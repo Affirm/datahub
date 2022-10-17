@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Dict, Iterable, List
 from dataclasses import dataclass, field
 
+from datahub.cli.cli_utils import get_aspects_for_entity
 from datahub.configuration.source_common import PlatformSourceConfigBase
 from datahub.emitter.mce_builder import (
     make_data_platform_urn,
@@ -112,12 +113,18 @@ class DynamoDBSource(Source):
 
     def make_workunit(self, table_name: str):
         table = describe_table(self.config.dynamodb_client, table_name)
-        dataset_urn = make_dataset_urn(DEFAULT_PLATFORM, table_name, self.config.env)
         keys = [x["AttributeName"] for x in table.get("KeySchema", [])]
+
+        dataset_urn = make_dataset_urn(DEFAULT_PLATFORM, table_name, self.config.env)
+        _aspects = get_aspects_for_entity(dataset_urn, [], typed=False)
+        _existing_metadata = _aspects['schemaMetadata']['fields']
+        existing_schema = {f['fieldPath']: f['nativeDataType'] for f in _existing_metadata}
 
         attribute_definitions = self.populate_attribute_definitions(table)
         if attribute_definitions is None:
             return None
+        # Merge the new schema with the exsiting one on Datahub
+        attribute_definitions.update(existing_schema)
         schema_fields = self.get_schema_fields(attribute_definitions)
         schema_metadata = SchemaMetadata(
             schemaName=f"{table_name}",
