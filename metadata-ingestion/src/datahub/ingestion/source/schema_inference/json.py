@@ -41,14 +41,11 @@ class JsonInferrer(SchemaInferenceBase):
         complete_datastore = {}
         for line in file:
             datastore = ujson.loads(line.decode('utf8'))
-            print("Current Datastore:", datastore)
             complete_datastore = self.merge_new_dictionary(complete_datastore, datastore)
-            print("Updated Complete Datastore:", complete_datastore)
 
         return complete_datastore
 
     def infer_schema(self, file: IO[bytes]) -> List[SchemaField]:
-        # datastore = ujson.load(file)
         datastore = self.parse_json(file)
 
         if not isinstance(datastore, list):

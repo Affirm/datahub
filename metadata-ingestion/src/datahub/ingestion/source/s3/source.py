@@ -414,7 +414,31 @@ class S3Source(Source):
             elif extension == ".avro":
                 fields = avro.AvroInferrer().infer_schema(file)
             elif extension == "":
-                fields = json.JsonInferrer().infer_schema(file)
+                try:
+                    fields = json.JsonInferrer().infer_schema(file)
+                except Exception as e:
+                    try:
+                        fields = parquet.ParquetInferrer().infer_schema(file)
+                    except Exception as e:
+                        try:
+                            fields = csv_tsv.CsvInferrer(
+                                max_rows=self.source_config.max_rows
+                            ).infer_schema(file)
+                        except:
+                            try:
+                                fields = csv_tsv.TsvInferrer(
+                                    max_rows=self.source_config.max_rows
+                                ).infer_schema(file)
+                            except:
+                                try:
+                                    fields = avro.AvroInferrer().infer_schema(file)
+                                except:
+                                    self.report.report_warning(
+                                        table_data.full_path,
+                                        f"could not infer schema for file\
+                                             {table_data.full_path}: {e}",
+                                    )
+                                    file.close()
             else:
                 self.report.report_warning(
                     table_data.full_path,
