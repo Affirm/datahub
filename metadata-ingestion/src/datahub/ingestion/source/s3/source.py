@@ -237,7 +237,6 @@ class S3Source(Source):
             "data_lake_config",
             config_report,
         )
-
         if config.profiling.enabled:
             telemetry.telemetry_instance.ping(
                 "data_lake_profiling_config",
@@ -414,11 +413,14 @@ class S3Source(Source):
                 fields = json.JsonInferrer().infer_schema(file)
             elif extension == ".avro":
                 fields = avro.AvroInferrer().infer_schema(file)
+            elif extension == "":
+                fields = json.JsonInferrer().infer_schema(file)
             else:
                 self.report.report_warning(
                     table_data.full_path,
                     f"file {table_data.full_path} has unsupported extension",
                 )
+                print("Extension:", extension)
             file.close()
         except Exception as e:
             self.report.report_warning(
