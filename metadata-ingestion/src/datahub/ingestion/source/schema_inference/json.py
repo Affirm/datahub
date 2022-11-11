@@ -29,24 +29,24 @@ _field_type_mapping: Dict[Union[Type, str], Type] = {
 
 
 class JsonInferrer(SchemaInferenceBase):
-    def merge_new_dictionary(self, complete_dict, new_dict):
-        for key in new_dict.keys():
-            if key not in complete_dict.keys():
-                complete_dict[key] = new_dict[key]
-
-        return complete_dict
-
-
     def parse_json(self, file):
-        complete_datastore = {}
+        complete_datastore = []
         for line in file:
-            datastore = ujson.loads(line.decode('utf8'))
-            complete_datastore = self.merge_new_dictionary(complete_datastore, datastore)
+            datastore = ujson.loads(line)
+            complete_datastore.append(datastore)
 
         return complete_datastore
 
     def infer_schema(self, file: IO[bytes]) -> List[SchemaField]:
-        datastore = self.parse_json(file)
+        datastore = []
+
+        try:
+            file_dict = ujson.load(file)
+        except ValueError as ve:
+            file.seek(0)
+            file_dict = self.parse_json(file)
+
+        datastore = file_dict
 
         if not isinstance(datastore, list):
             datastore = [datastore]

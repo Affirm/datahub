@@ -33,6 +33,7 @@ from pyspark.sql.types import (
 )
 from pyspark.sql.utils import AnalysisException
 from smart_open import open as smart_open
+from pyarrow.lib import ArrowInvalid
 
 import datahub.ingestion.source.s3.config
 from datahub.emitter.mce_builder import (
@@ -372,6 +373,35 @@ class S3Source(Source):
         # see https://mungingdata.com/pyspark/avoid-dots-periods-column-names/
         return df.toDF(*(c.replace(".", "_") for c in df.columns))
 
+
+    def infer_file_extension(self, file, table_data):
+        fields = []
+        try:
+            fields = parquet.ParquetInferrer().infer_schema(file)
+        except ArrowInvalid as ai:
+            try:
+                fields = json.JsonInferrer().infer_schema(file)
+            except ValueError as ve:
+                try:
+                    fields = avro.AvroInferrer().infer_schema(file)
+                except TypeError as te:
+                    try:
+                        fields = csv_tsv.CsvInferrer(
+                            max_rows=self.source_config.max_rows
+                        ).infer_schema(file)
+                    except:
+                        try:
+                            fields = csv_tsv.TsvInferrer(
+                                max_rows=self.source_config.max_rows
+                            ).infer_schema(file)
+                        except:
+                            self.report.report_warning(
+                                table_data.full_path,
+                                f"file {table_data.full_path} has unsupported extension",
+                            )
+        return fields
+
+
     def get_fields(self, table_data: TableData, path_spec: PathSpec) -> List:
         if table_data.is_s3:
             if self.source_config.aws_config is None:
@@ -413,38 +443,8 @@ class S3Source(Source):
                 fields = json.JsonInferrer().infer_schema(file)
             elif extension == ".avro":
                 fields = avro.AvroInferrer().infer_schema(file)
-            elif extension == "":
-                try:
-                    fields = json.JsonInferrer().infer_schema(file)
-                except Exception as e:
-                    try:
-                        fields = parquet.ParquetInferrer().infer_schema(file)
-                    except Exception as e:
-                        try:
-                            fields = csv_tsv.CsvInferrer(
-                                max_rows=self.source_config.max_rows
-                            ).infer_schema(file)
-                        except:
-                            try:
-                                fields = csv_tsv.TsvInferrer(
-                                    max_rows=self.source_config.max_rows
-                                ).infer_schema(file)
-                            except:
-                                try:
-                                    fields = avro.AvroInferrer().infer_schema(file)
-                                except:
-                                    self.report.report_warning(
-                                        table_data.full_path,
-                                        f"could not infer schema for file\
-                                             {table_data.full_path}: {e}",
-                                    )
-                                    file.close()
             else:
-                self.report.report_warning(
-                    table_data.full_path,
-                    f"file {table_data.full_path} has unsupported extension",
-                )
-                print("Extension:", extension)
+                fields = self.infer_file_extension(file, table_data)
             file.close()
         except Exception as e:
             self.report.report_warning(
