@@ -374,31 +374,29 @@ class S3Source(Source):
         return df.toDF(*(c.replace(".", "_") for c in df.columns))
 
 
-    def infer_file_extension(self, file, table_data):
+    def infer_file_without_extension(self, file):
         fields = []
         try:
             fields = parquet.ParquetInferrer().infer_schema(file)
         except ArrowInvalid as ai:
+            file.seek(0)
             try:
                 fields = json.JsonInferrer().infer_schema(file)
             except ValueError as ve:
+                file.seek(0)
                 try:
                     fields = avro.AvroInferrer().infer_schema(file)
                 except TypeError as te:
+                    file.seek(0)
                     try:
                         fields = csv_tsv.CsvInferrer(
                             max_rows=self.source_config.max_rows
                         ).infer_schema(file)
                     except:
-                        try:
-                            fields = csv_tsv.TsvInferrer(
-                                max_rows=self.source_config.max_rows
-                            ).infer_schema(file)
-                        except:
-                            self.report.report_warning(
-                                table_data.full_path,
-                                f"file {table_data.full_path} has unsupported extension",
-                            )
+                        file.seek(0)
+                        fields = csv_tsv.TsvInferrer(
+                            max_rows=self.source_config.max_rows
+                        ).infer_schema(file)
         return fields
 
 
@@ -444,7 +442,7 @@ class S3Source(Source):
             elif extension == ".avro":
                 fields = avro.AvroInferrer().infer_schema(file)
             else:
-                fields = self.infer_file_extension(file, table_data)
+                fields = self.infer_file_without_extension(file)
             file.close()
         except Exception as e:
             self.report.report_warning(

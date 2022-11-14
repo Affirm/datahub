@@ -41,15 +41,12 @@ class JsonInferrer(SchemaInferenceBase):
         datastore = []
 
         try:
-            file_dict = ujson.load(file)
+            file_dict = [ujson.load(file)]
         except ValueError as ve:
             file.seek(0)
             file_dict = self.parse_json(file)
 
         datastore = file_dict
-
-        if not isinstance(datastore, list):
-            datastore = [datastore]
 
         schema = construct_schema(datastore, delimiter=".")
         fields: List[SchemaField] = []
