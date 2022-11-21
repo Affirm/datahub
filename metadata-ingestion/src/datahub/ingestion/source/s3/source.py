@@ -7,6 +7,7 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from pyarrow.lib import ArrowInvalid
 import pydeequ
 from pydeequ.analyzers import AnalyzerContext
 from pyspark.conf import SparkConf
@@ -33,7 +34,6 @@ from pyspark.sql.types import (
 )
 from pyspark.sql.utils import AnalysisException
 from smart_open import open as smart_open
-from pyarrow.lib import ArrowInvalid
 
 import datahub.ingestion.source.s3.config
 from datahub.emitter.mce_builder import (
@@ -238,6 +238,7 @@ class S3Source(Source):
             "data_lake_config",
             config_report,
         )
+
         if config.profiling.enabled:
             telemetry.telemetry_instance.ping(
                 "data_lake_profiling_config",
