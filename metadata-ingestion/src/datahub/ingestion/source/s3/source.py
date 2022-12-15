@@ -7,8 +7,8 @@ from collections import OrderedDict
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from pyarrow.lib import ArrowInvalid
 import pydeequ
+from pyarrow.lib import ArrowInvalid
 from pydeequ.analyzers import AnalyzerContext
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
