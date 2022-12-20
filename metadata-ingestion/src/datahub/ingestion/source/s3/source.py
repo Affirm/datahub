@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pydeequ
+from pyarrow.lib import ArrowInvalid
 from pydeequ.analyzers import AnalyzerContext
 from pyspark.conf import SparkConf
 from pyspark.sql import SparkSession
@@ -373,6 +374,33 @@ class S3Source(Source):
         # see https://mungingdata.com/pyspark/avoid-dots-periods-column-names/
         return df.toDF(*(c.replace(".", "_") for c in df.columns))
 
+
+    def infer_file_without_extension(self, file):
+        fields = []
+        try:
+            fields = parquet.ParquetInferrer().infer_schema(file)
+        except ArrowInvalid as ai:
+            file.seek(0)
+            try:
+                fields = json.JsonInferrer().infer_schema(file)
+            except ValueError as ve:
+                file.seek(0)
+                try:
+                    fields = avro.AvroInferrer().infer_schema(file)
+                except TypeError as te:
+                    file.seek(0)
+                    try:
+                        fields = csv_tsv.CsvInferrer(
+                            max_rows=self.source_config.max_rows
+                        ).infer_schema(file)
+                    except:
+                        file.seek(0)
+                        fields = csv_tsv.TsvInferrer(
+                            max_rows=self.source_config.max_rows
+                        ).infer_schema(file)
+        return fields
+
+
     def get_fields(self, table_data: TableData, path_spec: PathSpec) -> List:
         if table_data.is_s3:
             if self.source_config.aws_config is None:
@@ -415,10 +443,7 @@ class S3Source(Source):
             elif extension == ".avro":
                 fields = avro.AvroInferrer().infer_schema(file)
             else:
-                self.report.report_warning(
-                    table_data.full_path,
-                    f"file {table_data.full_path} has unsupported extension",
-                )
+                fields = self.infer_file_without_extension(file)
             file.close()
         except Exception as e:
             self.report.report_warning(

@@ -29,12 +29,24 @@ _field_type_mapping: Dict[Union[Type, str], Type] = {
 
 
 class JsonInferrer(SchemaInferenceBase):
+    def parse_json(self, file):
+        complete_datastore = []
+        for line in file:
+            datastore = ujson.loads(line)
+            complete_datastore.append(datastore)
+
+        return complete_datastore
+
     def infer_schema(self, file: IO[bytes]) -> List[SchemaField]:
+        datastore = []
 
-        datastore = ujson.load(file)
+        try:
+            file_dict = [ujson.load(file)]
+        except ValueError as ve:
+            file.seek(0)
+            file_dict = self.parse_json(file)
 
-        if not isinstance(datastore, list):
-            datastore = [datastore]
+        datastore = file_dict
 
         schema = construct_schema(datastore, delimiter=".")
         fields: List[SchemaField] = []
