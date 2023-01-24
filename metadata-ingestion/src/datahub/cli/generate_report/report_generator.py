@@ -203,6 +203,7 @@ class OutputWriter:
             self._write_csv(rows)
         else:
             raise ValueError(f"unhandled output format: {self.output_format}")
+        self.fileobj.flush()
 
     def _write_csv(self, rows: Iterable[Dict]) -> None:
         fieldnames = ["dataset", "field", "type", "privacy_law"]
