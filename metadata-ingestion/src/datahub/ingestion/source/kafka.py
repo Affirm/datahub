@@ -76,7 +76,7 @@ class KafkaSourceConfig(StatefulIngestionConfigBase, DatasetSourceConfigBase):
     )
     topic_message_map: Dict[str, str] = pydantic.Field(
         default_factory=dict,
-        description="Provices the mapping for the topic to the corresponding schema fqdn (message) in hte schema registry"
+        description="Provides the mapping for the topic to the corresponding schema fqdn (message) in the schema registry"
     )
     # Custom Stateful Ingestion settings
     stateful_ingestion: Optional[KafkaSourceStatefulIngestionConfig] = None
