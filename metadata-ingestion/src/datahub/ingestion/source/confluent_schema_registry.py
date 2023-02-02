@@ -217,6 +217,7 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
                 ProtobufSchema
             ] = self.get_schemas_from_confluent_ref_protobuf(schema)
             base_name: str = topic.replace(".", "_")
+            message_name: str = self.source_config.topic_message_map.get(topic)
             fields = protobuf_util.protobuf_schema_to_mce_fields(
                 ProtobufSchema(
                     f"{base_name}-key.proto"
@@ -226,6 +227,7 @@ class ConfluentSchemaRegistry(KafkaSchemaRegistryBase):
                 ),
                 imported_schemas,
                 is_key_schema=is_key_schema,
+                message_name=message_name
             )
         elif not self.source_config.ignore_warnings_on_schema_type:
             self.report.report_warning(
