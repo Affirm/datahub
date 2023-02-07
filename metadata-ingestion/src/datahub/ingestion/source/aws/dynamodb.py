@@ -1,6 +1,7 @@
+import json
 import logging
 from collections import OrderedDict
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 from dataclasses import dataclass, field
 
 from datahub.cli.cli_utils import get_aspects_for_entity
@@ -52,7 +53,12 @@ _attribute_type_mapping = {
 
 class DynamoDBSourceConfig(AwsSourceConfig, PlatformSourceConfigBase):
 
-    ingest_tables: List[str] = None
+    ingest_tables: Optional[List[str]] = None
+    s3_snapshot_schema_path: Optional[str] = None
+
+    @property
+    def s3_client(self):
+        return self.get_s3_client()
 
     @property
     def dynamodb_client(self):
@@ -121,7 +127,7 @@ class DynamoDBSource(Source):
         existing_schema = {f['fieldPath']: f['nativeDataType'] for f in _existing_metadata}
 
         attribute_definitions = self.populate_attribute_definitions(table)
-        if attribute_definitions is None:
+        if not attribute_definitions:
             return None
         # Merge the new schema with the exsiting one on Datahub
         attribute_definitions.update(existing_schema)
@@ -155,6 +161,10 @@ class DynamoDBSource(Source):
         attribute_definitions = {
             x["AttributeName"]: x["AttributeType"] for x in raw_attribute_definitions
         }
+        snapshot_attribute_definitions = self.populate_attribute_definitions_from_snapshot()
+        if snapshot_attribute_definitions:
+            attribute_definitions.update(snapshot_attribute_definitions)
+
         if table.get("StreamSpecification", {}).get("StreamEnabled", False):
             stream_arn = table["LatestStreamArn"]
             attribute_definitions.update(
@@ -164,9 +174,50 @@ class DynamoDBSource(Source):
             table_name = table["TableName"]
             logger.warn(f"Table {table_name} streaming is NOT enabled.")
             self.report.report_table_streaming_disabled(table_name)
-            return None
+
         return attribute_definitions
 
+    def populate_attribute_definitions_from_snapshot(self) -> Optional[Dict[str, str]]:
+        if self.config.s3_snapshot_schema_path is None:
+            return None
+
+        # TODO: use util function or add validation
+        bucket, prefix = self.config.s3_snapshot_schema_path.lstrip('s3://').split('/', 1)
+        logger.info(f"Looking for spark schema at {self.config.s3_snapshot_schema_path}")
+
+        list_objects_response = self.config.s3_client.list_objects(Bucket=bucket, Prefix=prefix)
+        json_file_keys = [
+            obj['Key'] for obj in list_objects_response['Contents']
+            if obj['Key'].endswith('.json')
+        ]
+        if not json_file_keys:
+            logger.error(f"Found no spark schema json file at {self.config.s3_snapshot_schema_path}")
+            return None
+
+        # Assume there's only one JSON file containing spark schema.
+        if len(json_file_keys) >= 1:
+            logger.error(f"Found {len(json_file_keys)} json files at {self.config.s3_snapshot_schema_path}. "
+                         "There should only be 1.")
+            return None
+        spark_json_schema_key = json_file_keys[0]
+        logger.info(f"Found spark schema at {spark_json_schema_key}")
+
+        object_response = self.config.s3_client.get_object(Bucket=bucket, Key=spark_json_schema_key)
+        spark_schema_json = json.loads(object_response['Body'].read().decode('utf-8'))
+        assert len(spark_schema_json['fields']) == 1
+        assert spark_schema_json['fields'][0]['type']['type'] == 'struct'
+
+        attribute_definitions = {}
+        for field in spark_schema_json['fields'][0]['type']['fields']:
+            field_name = field['name']
+            assert field['type']['type'] == 'struct'
+            assert len(field['type']['fields']) == 1
+
+            dynamo_column_type_info = field['type']['fields'][0]
+            attribute_definitions[field_name] = dynamo_column_type_info['name']
+
+        logger.info(f"Spark schema is: {attribute_definitions}")
+        return attribute_definitions
 
     def get_schema_fields(self, attribute_definitions: Dict):
         schema_fields = []
