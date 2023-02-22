@@ -57,16 +57,16 @@ class DynamoDBSourceConfig(AwsSourceConfig, PlatformSourceConfigBase):
     s3_snapshot_schema_path: Optional[str] = None
 
     @property
-    def s3_client(self):
-        return self.get_s3_client()
-
-    @property
     def dynamodb_client(self):
         return self.get_dynamodb_client()
 
     @property
     def dynamodbstreams_client(self):
         return self.get_dynamodbstreams_client()
+
+    @property
+    def s3_client(self):
+        return self.get_s3_client()
 
 
 @dataclass
@@ -167,15 +167,18 @@ class DynamoDBSource(Source):
 
         if table.get("StreamSpecification", {}).get("StreamEnabled", False):
             stream_arn = table["LatestStreamArn"]
-            attribute_definitions.update(
-                get_attribute_definitions(self.config.dynamodbstreams_client, stream_arn)
-            )
+            for attr, new_value in get_attribute_definitions(self.config.dynamodbstreams_client, stream_arn):
+                existing_value = attribute_definitions.get(attr)
+                if existing_value is not None and existing_value != new_value:
+                    logger.warn(f'Overwriting {attr} type: was {existing_value} but now is {new_value}')
+                attribute_definitions[attr] = new_value
         else:
             table_name = table["TableName"]
             logger.warn(f"Table {table_name} streaming is NOT enabled.")
             self.report.report_table_streaming_disabled(table_name)
 
         return attribute_definitions
+
 
     def populate_attribute_definitions_from_snapshot(self) -> Optional[Dict[str, str]]:
         if self.config.s3_snapshot_schema_path is None:
@@ -218,6 +221,7 @@ class DynamoDBSource(Source):
 
         logger.info(f"Spark schema is: {attribute_definitions}")
         return attribute_definitions
+
 
     def get_schema_fields(self, attribute_definitions: Dict):
         schema_fields = []
