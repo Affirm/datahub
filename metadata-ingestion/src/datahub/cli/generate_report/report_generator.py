@@ -60,6 +60,12 @@ class PrivacyTermExtractor:
           entity {
             ... on Dataset {
               urn
+              platform {
+                name
+              }
+              dataPlatformInstance {
+                instanceId
+              }
               editableSchemaMetadata {
                 editableSchemaFieldInfo {
                   fieldPath
@@ -78,6 +84,7 @@ class PrivacyTermExtractor:
                 name
                 fields {
                   fieldPath
+                  type
                   glossaryTerms {
                     terms {
                       term {
@@ -145,15 +152,20 @@ class PrivacyTermExtractor:
     def _yield_rows(cls, entity: Dict) -> Generator[Dict, None, None]:
         # Merge glossaryTerms from both schemaMetadata and editableSchemaMetadata
         merged_rows = {}
+        platform = entity["entity"]["platform"]["name"]
+        platform_instance = (entity["entity"]["dataPlatformInstance"] or {}).get("instanceId")
         # schemaMetadata can be empty due to the zombie issue. Let's not fail here.
         if entity["entity"]["schemaMetadata"]:
+            dataset = entity["entity"]["schemaMetadata"]["name"]
             # schemaMetadata will contain all fields
             for field in entity["entity"]["schemaMetadata"]["fields"]:
                 merged_rows[field["fieldPath"]] = {
-                    "dataset": entity["entity"]["schemaMetadata"]["name"],
+                    "dataset": dataset,
+                    "platform": platform,
+                    "instance": platform_instance,
                     "field": field["fieldPath"],
-                    "type": [],
-                    "privacy_law": [],
+                    "type": field["type"],
+                    "terms": [],
                 }
                 cls._add_terms_to_row(merged_rows[field["fieldPath"]], field)
 
@@ -178,10 +190,8 @@ class PrivacyTermExtractor:
             return
         for term in field["glossaryTerms"]["terms"]:
             term_id = term["term"]["urn"].split(":")[-1]
-            if term_id.startswith("PiiData"):
-                row["type"].append(term_id.split(".")[-1])
-            if term_id.startswith("PrivacyLaw"):
-                row["privacy_law"].append(term_id.split(".")[-1])
+            if term_id.startswith("PersonalData"):
+                row["terms"].append(term_id)
 
 
 class OutputWriter:
@@ -206,14 +216,11 @@ class OutputWriter:
         self.fileobj.flush()
 
     def _write_csv(self, rows: Iterable[Dict]) -> None:
-        fieldnames = ["dataset", "field", "type", "privacy_law"]
+        fieldnames = ["platform", "instance", "dataset", "field", "type", "terms"]
         writer = csv.DictWriter(self.fileobj, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
-            # TODO: make this more generic rather than just privacy
-            # transform lists to be csv friendly
-            row["type"] = ", ".join(sorted(row["type"]))
-            row["privacy_law"] = ", ".join(sorted(row["privacy_law"]))
+            row["terms"] = "; ".join(sorted(row["terms"]))
             writer.writerow(row)
 
 
