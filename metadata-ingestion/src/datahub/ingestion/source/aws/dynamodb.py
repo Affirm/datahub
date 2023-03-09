@@ -167,7 +167,7 @@ class DynamoDBSource(Source):
 
         if table.get("StreamSpecification", {}).get("StreamEnabled", False):
             stream_arn = table["LatestStreamArn"]
-            for attr, new_value in get_attribute_definitions(self.config.dynamodbstreams_client, stream_arn):
+            for attr, new_value in get_attribute_definitions(self.config.dynamodbstreams_client, stream_arn).items():
                 existing_value = attribute_definitions.get(attr)
                 if existing_value is not None and existing_value != new_value:
                     logger.warn(f'Overwriting {attr} type: was {existing_value} but now is {new_value}')
