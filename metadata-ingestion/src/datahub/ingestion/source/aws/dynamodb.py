@@ -123,7 +123,7 @@ class DynamoDBSource(Source):
 
         dataset_urn = make_dataset_urn(DEFAULT_PLATFORM, table_name, self.config.env)
         _aspects = get_aspects_for_entity(dataset_urn, [], typed=False)
-        _existing_metadata = _aspects['schemaMetadata']['fields']
+        _existing_metadata = _aspects.get('schemaMetadata', {}).get('fields', {})
         existing_schema = {f['fieldPath']: f['nativeDataType'] for f in _existing_metadata}
 
         attribute_definitions = self.populate_attribute_definitions(table)
