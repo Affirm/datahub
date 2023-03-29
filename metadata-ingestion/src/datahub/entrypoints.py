@@ -16,6 +16,7 @@ from datahub.cli.cli_utils import (
 )
 from datahub.cli.delete_cli import delete
 from datahub.cli.docker_cli import docker
+from datahub.cli.generate_report_cli import generate_report
 from datahub.cli.get_cli import get
 from datahub.cli.ingest_cli import ingest
 from datahub.cli.migrate import migrate
