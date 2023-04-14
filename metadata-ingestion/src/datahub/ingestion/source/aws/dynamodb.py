@@ -5,7 +5,7 @@ from typing import Dict, Iterable, List, Optional
 from dataclasses import dataclass, field
 
 from datahub.cli.cli_utils import get_aspects_for_entity
-from datahub.configuration.source_common import PlatformSourceConfigBase
+from datahub.configuration.source_common import PlatformInstanceConfigMixin
 from datahub.emitter.mce_builder import (
     make_data_platform_urn,
     make_dataset_urn,
@@ -51,7 +51,7 @@ _attribute_type_mapping = {
 }
 
 
-class DynamoDBSourceConfig(AwsSourceConfig, PlatformSourceConfigBase):
+class DynamoDBSourceConfig(AwsSourceConfig, PlatformInstanceConfigMixin):
 
     ingest_tables: Optional[List[str]] = None
     s3_snapshot_schema_path: Optional[str] = None
