@@ -184,7 +184,7 @@ class DynamoDBSource(Source):
         if self.config.s3_snapshot_schema_path is None:
             return None
 
-        # TODO: use util function or add validation.
+        # TODO: use util function or add validation
         bucket, prefix = self.config.s3_snapshot_schema_path.lstrip('s3://').split('/', 1)
         logger.info(f"Looking for spark schema at {self.config.s3_snapshot_schema_path}")
 
