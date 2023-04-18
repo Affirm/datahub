@@ -52,7 +52,7 @@ _attribute_type_mapping = {
 
 
 class DynamoDBSourceConfig(AwsSourceConfig, PlatformInstanceConfigMixin):
-
+ 
     ingest_tables: Optional[List[str]] = None
     s3_snapshot_schema_path: Optional[str] = None
 
@@ -174,8 +174,9 @@ class DynamoDBSource(Source):
                 attribute_definitions[attr] = new_value
         else:
             table_name = table["TableName"]
-            logger.warn(f"Table {table_name} streaming is NOT enabled.")
+            logger.error(f"Table {table_name} streaming is NOT enabled.")
             self.report.report_table_streaming_disabled(table_name)
+            raise Exception(f"Table {table_name} streaming is NOT enabled.")
 
         return attribute_definitions
 
