@@ -76,9 +76,6 @@ class DynamoDBSourceReport(SourceReport):
     def report_table_filtered(self, table: str) -> None:
         self.filtered_tables.append(table)
 
-    def report_table_streaming_disabled(self, table: str) -> None:
-        self.streaming_disabled_tables.append(table)
-
 
 @dataclass
 class DynamoDBSource(Source):
