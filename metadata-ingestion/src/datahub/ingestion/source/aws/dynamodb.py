@@ -176,7 +176,7 @@ class DynamoDBSource(Source):
             table_name = table["TableName"]
             logger.error(f"Table {table_name} streaming is NOT enabled.")
             self.report.report_table_streaming_disabled(table_name)
-            raise Exception(f"Table {table_name} streaming is NOT enabled.")
+            raise RuntimeError(f"Table {table_name} streaming is NOT enabled.")
 
         return attribute_definitions
 
