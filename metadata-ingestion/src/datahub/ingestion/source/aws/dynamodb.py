@@ -52,7 +52,6 @@ _attribute_type_mapping = {
 
 
 class DynamoDBSourceConfig(AwsSourceConfig, PlatformInstanceConfigMixin):
- 
     ingest_tables: Optional[List[str]] = None
     s3_snapshot_schema_path: Optional[str] = None
 
