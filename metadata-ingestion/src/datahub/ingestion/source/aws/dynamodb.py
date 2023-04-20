@@ -173,6 +173,7 @@ class DynamoDBSource(Source):
                 attribute_definitions[attr] = new_value
         else:
             table_name = table["TableName"]
+            # TODO: Add config field to whether hard fail or soft fail the job
             raise RuntimeError(f"Table {table_name} streaming is NOT enabled.")
 
         return attribute_definitions
