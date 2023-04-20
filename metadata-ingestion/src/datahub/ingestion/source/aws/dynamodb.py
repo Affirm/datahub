@@ -174,7 +174,6 @@ class DynamoDBSource(Source):
                 attribute_definitions[attr] = new_value
         else:
             table_name = table["TableName"]
-            self.report.report_table_streaming_disabled(table_name)
             raise RuntimeError(f"Table {table_name} streaming is NOT enabled.")
 
         return attribute_definitions
