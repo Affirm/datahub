@@ -1,0 +1,20 @@
+sink:
+  type: "datahub-rest"
+  config:
+    server:  "http://localhost:9002/api/gms"
+    token: "eyJhbGciOiJIUzI1NiJ9.eyJhY3RvclR5cGUiOiJVU0VSIiwiYWN0b3JJZCI6ImRhdGFodWIiLCJ0eXBlIjoiUEVSU09OQUwiLCJ2ZXJzaW9uIjoiMiIsImp0aSI6ImQ5ZjdjOGI3LWJkNWQtNDVhZS05NDQ2LWFiZGJhMDM3OWMyOCIsInN1YiI6ImRhdGFodWIiLCJpc3MiOiJkYXRhaHViLW1ldGFkYXRhLXNlcnZpY2UifQ.c7iktxUu7p8Wfo3dDTS1wlxCUM0Lz3MrkQXWqfpGWKA"
+
+source:
+  type: dynamodb
+  config:
+     env: 'PROD'
+     table_pattern:
+         allow:
+         - "AffirmCancelsChargeConsumer"
+         deny:
+         - '.*test.*'
+         - '.*sandbox.*'
+         - '.*logstash.*'
+     aws_region: "us-east-1"
+
+pipeline_name: "test-pipeline"
