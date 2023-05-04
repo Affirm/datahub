@@ -4,7 +4,7 @@ import attr
 
 import datahub.emitter.mce_builder as builder
 from datahub.utilities.urns.urn import guess_entity_type
-
+from typing import Any, ClassVar
 
 class _Entity:
     @property
@@ -15,6 +15,7 @@ class _Entity:
 
 @attr.s(auto_attribs=True, str=True)
 class Dataset(_Entity):
+    template_fields: ClassVar = ("platform", "name", "env",)
     platform: str
     name: str
     env: str = builder.DEFAULT_ENV
