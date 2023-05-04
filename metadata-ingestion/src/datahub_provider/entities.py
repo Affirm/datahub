@@ -4,7 +4,7 @@ import attr
 
 import datahub.emitter.mce_builder as builder
 from datahub.utilities.urns.urn import guess_entity_type
-from typing import Any, ClassVar
+from typing import ClassVar
 
 class _Entity:
     @property
