@@ -4,7 +4,7 @@ import attr
 
 import datahub.emitter.mce_builder as builder
 from datahub.utilities.urns.urn import guess_entity_type
-
+from typing import ClassVar
 
 class _Entity:
     @property
@@ -15,6 +15,10 @@ class _Entity:
 
 @attr.s(auto_attribs=True, str=True)
 class Dataset(_Entity):
+    # This will help use jinja templates when setting these parameters.
+    # Airflow Lineage Dataset entites support this
+    # Eg: https://github.com/apache/airflow/blob/5b255dcab7f488601fd3d31e9be2ae70b7dea483/airflow/lineage/entities.py#LL30C4-L30C41
+    template_fields: ClassVar = ("platform", "name", "env",)
     platform: str
     name: str
     env: str = builder.DEFAULT_ENV
