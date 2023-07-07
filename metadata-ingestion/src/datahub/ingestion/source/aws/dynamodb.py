@@ -17,6 +17,7 @@ from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.ingestion.source.aws.aws_common import AwsSourceConfig
 from datahub.metadata.schema_classes import (
     ChangeTypeClass,
+    StatusClass
 )
 from datahub.metadata.com.linkedin.pegasus2avro.schema import (
     ArrayType,
@@ -112,6 +113,12 @@ class DynamoDBSource(Source):
                 continue
             yield wu
 
+            # add status
+            dataset_urn = make_dataset_urn(DEFAULT_PLATFORM, table_name, self.config.env)
+            yield MetadataChangeProposalWrapper(
+                entityUrn=f"{dataset_urn}",
+                aspect=StatusClass(removed=False),
+            ).as_workunit()
 
     def make_workunit(self, table_name: str):
         table = describe_table(self.config.dynamodb_client, table_name)
